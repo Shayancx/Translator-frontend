@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LibreTranslate</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="alpine.min.js"></script>
+</head>
+<body x-data="{ theme: localStorage.getItem('theme') || 'dark' }" :class="theme" x-init="$watch('theme', val => localStorage.setItem('theme', val))">
+    <div class="app" x-data="translator()">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <svg class="logo" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/>
+                    </svg>
+                    <h1>LibreTranslate</h1>
+                </div>
+                <div class="header-right">
+                    <div class="connection-status">
+                        <span class="status-dot" :class="isConnected ? 'connected' : 'disconnected'"></span>
+                        <span class="status-text" x-text="isConnected ? baseUrl.replace(/https(s?):\/\//, '') : 'Disconnected'"></span>
+                    </div>
+                    <button class="theme-toggle" @click="
+                        document.body.classList.add('no-transition');
+                        theme = theme === 'dark' ? 'light' : 'dark';
+                        requestAnimationFrame(() => {
+                            document.body.classList.remove('no-transition');
+                        });
+                    ">
+                        <svg x-show="theme === 'dark'" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.5.5 0 01.5.5v2a.5.5 0 01-1 0v-2A.5.5 0 018 0zm0 13a.5.5 0 01.5.5v2a.5.5 0 01-1 0v-2A.5.5 0 018 13zm8-5a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2a.5.5 0 01.5.5zM3 8a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2A.5.5 0 013 8zm10.657-5.657a.5.5 0 010 .707l-1.414 1.415a.5.5 0 11-.707-.708l1.414-1.414a.5.5 0 01.707 0zm-9.193 9.193a.5.5 0 010 .707L3.05 13.657a.5.5 0 01-.707-.707l1.414-1.414a.5.5 0 01.707 0zm9.193 2.121a.5.5 0 01-.707 0l-1.414-1.414a.5.5 0 01.707-.707l1.414 1.414a.5.5 0 010 .707zM4.464 4.465a.5.5 0 01-.707 0L2.343 3.05a.5.5 0 11.707-.707l1.414 1.414a.5.5 0 010 .708z"/>
+                        </svg>
+                        <svg x-show="theme === 'light'" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M6 .278a.768.768 0 01.08.858 7.208 7.208 0 00-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 01.81.316.733.733 0 01-.031.893A8.349 8.349 0 018.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 016 .278z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="container">
+                <!-- Translation Interface -->
+                <div class="translation-interface">
+                    <div class="translation-panel">
+                        <div class="panel-header">
+                            <div class="language-select">
+                                <button class="select-button" @click="sourceMenuOpen = !sourceMenuOpen">
+                                    <span x-text="getLanguageName(sourceLang)"></span>
+                                    <template x-if="sourceLang === 'auto' && detectedLang">
+                                        <span class="detected-lang">-&nbsp;</span>
+                                        <span class="detected-lang" x-text="getLanguageName(detectedLang)"></span>
+                                    </template>
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/>
+                                    </svg>
+                                </button>
+                                <div class="select-menu" x-show="sourceMenuOpen" @click.outside="sourceMenuOpen = false" x-transition>
+                                    <div class="select-menu-search">
+                                        <input type="text" x-model.debounce.300ms="sourceSearch" placeholder="Search language..." @keydown.escape.window="sourceMenuOpen = false" x-ref="sourceSearchInput">
+                                    </div>
+                                    <div class="select-menu-list">
+                                        <button class="select-menu-item" @click="selectSourceLang('auto')">
+                                            <span class="select-menu-item-text">Auto-detect</span>
+                                        </button>
+                                        <div class="select-menu-divider"></div>
+                                        <template x-for="lang in filteredSourceLanguages" :key="lang.code">
+                                            <button class="select-menu-item" @click="selectSourceLang(lang.code)">
+                                                <span class="select-menu-item-text" x-text="lang.name"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="panel-actions">
+                                <span class="char-count" x-show="charLimit > 0">
+                                    <span x-text="sourceText.length"></span> / <span x-text="charLimit"></span>
+                                </span>
+                                <button class="btn-icon" @click="pasteFromClipboard" title="Paste">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M5.75 1a.75.75 0 00-.75.75v3c0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75v-3a.75.75 0 00-.75-.75h-4.5zm.75 3V2.5h3V4h-3zm-2.874-.467a.75.75 0 00-.752-1.298A1.75 1.75 0 002 3.75v9.5c0 .966.784 1.75 1.75 1.75h8.5A1.75 1.75 0 0014 13.25v-9.5a1.75 1.75 0 00-.874-1.515.75.75 0 10-.752 1.298.25.25 0 01.126.217v9.5a.25.25 0 01-.25.25h-8.5a.25.25 0 01-.25-.25v-9.5a.25.25 0 01.126-.217z"/>
+                                    </svg>
+                                </button>
+                                <button class="btn-icon" @click="sourceText = ''" x-show="sourceText" title="Clear">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <textarea
+                            class="translation-input"
+                            x-model="sourceText"
+                            @input="handleInput"
+                            placeholder="Enter text to translate"
+                            :maxlength="charLimit > 0 ? charLimit : undefined"
+                        ></textarea>
+                    </div>
+
+                    <div class="swap-button-container">
+                        <button class="swap-button" @click="swapLanguages()" :disabled="sourceLang === 'auto'">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M1 11.5a.5.5 0 00.5.5h11.793l-3.147 3.146a.5.5 0 00.708.708l4-4a.5.5 0 000-.708l-4-4a.5.5 0 00-.708.708L13.293 11H1.5a.5.5 0 00-.5.5zm14-7a.5.5 0 01-.5.5H2.707l3.147 3.146a.5.5 0 11-.708.708l-4-4a.5.5 0 010-.708l4-4a.5.5 0 01.708.708L2.707 4H14.5a.5.5 0 01.5.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="translation-panel">
+                        <div class="panel-header">
+                            <div class="language-select">
+                                <button class="select-button" @click="targetMenuOpen = !targetMenuOpen">
+                                    <span x-text="getLanguageName(targetLang)"></span>
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/>
+                                    </svg>
+                                </button>
+                                <div class="select-menu" x-show="targetMenuOpen" @click.outside="targetMenuOpen = false" x-transition>
+                                    <div class="select-menu-search">
+                                        <input type="text" x-model.debounce.300ms="targetSearch" placeholder="Search language..." @keydown.escape.window="targetMenuOpen = false" x-ref="targetSearchInput">
+                                    </div>
+                                    <div class="select-menu-list">
+                                        <template x-for="lang in filteredTargetLanguages" :key="lang.code">
+                                            <button class="select-menu-item" @click="selectTargetLang(lang.code)">
+                                                <span class="select-menu-item-text" x-text="lang.name"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="panel-actions">
+                                <div class="loading-spinner" x-show="isTranslating">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z" opacity="0.2"/>
+                                        <path d="M8 0a8 8 0 018 8h-1.5A6.5 6.5 0 008 1.5V0z">
+                                            <animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="1s" repeatCount="indefinite"/>
+                                        </path>
+                                    </svg>
+                                </div>
+                                <button class="btn-icon" @click="copyTranslation" x-show="translatedText && !isTranslating" title="Copy translation">
+                                    <svg x-show="!copied" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+                                        <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+                                    </svg>
+                                    <svg x-show="copied" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <textarea
+                            class="translation-output"
+                            x-model="translatedText"
+                            readonly
+                            placeholder="Translation will appear here"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div class="alert alert-error" x-show="error" x-transition>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8.22 1.754a.25.25 0 00-.44 0L1.698 13.132a.25.25 0 00.22.368h12.164a.25.25 0 00.22-.368L8.22 1.754zm-1.763-.707c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0114.082 15H1.918a1.75 1.75 0 01-1.543-2.575L6.457 1.047zM9 11a1 1 0 11-2 0 1 1 0 012 0zm-.25-5.25a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0v-2.5z"/>
+                    </svg>
+                    <span x-text="error"></span>
+                    <button class="alert-close" @click="error = ''">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function translator() {
+            return {
+                baseUrl: 'http://192.168.2.77:5000',
+                languages: [],
+                sourceLang: localStorage.getItem('sourceLang') || 'auto',
+                targetLang: localStorage.getItem('targetLang') || 'en',
+                detectedLang: '',
+                sourceText: '',
+                translatedText: '',
+                isTranslating: false,
+                error: '',
+                charLimit: -1,
+                copied: false,
+                translationTimeout: null,
+                isConnected: false,
+                sourceMenuOpen: false,
+                targetMenuOpen: false,
+                sourceSearch: '',
+                targetSearch: '',
+
+                init() {
+                    this.fetchLanguages();
+                    this.fetchSettings();
+
+                    this.$watch('sourceLang', val => localStorage.setItem('sourceLang', val));
+                    this.$watch('targetLang', val => localStorage.setItem('targetLang', val));
+
+                    this.$watch('sourceMenuOpen', isOpen => {
+                        if (isOpen) {
+                            this.$nextTick(() => this.$refs.sourceSearchInput.focus());
+                        } else {
+                            this.sourceSearch = '';
+                        }
+                    });
+
+                    this.$watch('targetMenuOpen', isOpen => {
+                        if (isOpen) {
+                            this.$nextTick(() => this.$refs.targetSearchInput.focus());
+                        } else {
+                            this.targetSearch = '';
+                        }
+                    });
+
+                    setInterval(() => this.checkConnection(), 15000);
+                },
+
+                async fetchLanguages() {
+                    try {
+                        const response = await fetch(`${this.baseUrl}/languages`);
+                        if (!response.ok) throw new Error('Server not reachable');
+                        this.languages = await response.json();
+                        this.isConnected = true;
+                        if (this.languages.length > 0 && !this.languages.find(l => l.code === this.targetLang)) {
+                            this.targetLang = this.languages[0].code;
+                        }
+                    } catch (err) {
+                        this.error = 'Failed to connect to translation server';
+                        this.isConnected = false;
+                    }
+                },
+
+                async fetchSettings() {
+                    try {
+                        const response = await fetch(`${this.baseUrl}/frontend/settings`);
+                        const settings = await response.json();
+                        this.charLimit = settings.charLimit || -1;
+                    } catch (err) {
+                        console.error('Failed to load settings:', err);
+                    }
+                },
+
+                getLanguageName(code) {
+                    if (code === 'auto') return 'Auto-detect';
+                    const lang = this.languages.find(l => l.code === code);
+                    return lang ? lang.name : code;
+                },
+
+                selectSourceLang(code) {
+                    if (code === this.targetLang) {
+                        [this.sourceLang, this.targetLang] = [this.targetLang, this.sourceLang];
+                    } else {
+                        this.sourceLang = code;
+                    }
+                    this.sourceMenuOpen = false;
+                    if (this.sourceText) this.translate();
+                },
+
+                selectTargetLang(code) {
+                    if (code === this.sourceLang) {
+                        [this.sourceLang, this.targetLang] = [this.targetLang, this.sourceLang];
+                    } else {
+                        this.targetLang = code;
+                    }
+                    this.targetMenuOpen = false;
+                    if (this.sourceText) this.translate();
+                },
+
+                get filteredSourceLanguages() {
+                    if (!this.sourceSearch) {
+                        return this.languages;
+                    }
+                    return this.languages.filter(lang =>
+                        lang.name.toLowerCase().includes(this.sourceSearch.toLowerCase())
+                    );
+                },
+
+                get targetLanguages() {
+                    if (this.sourceLang === 'auto') {
+                        return this.languages;
+                    }
+                    const sourceLangObj = this.languages.find(l => l.code === this.sourceLang);
+                    if (!sourceLangObj) return this.languages;
+                    return this.languages.filter(l => sourceLangObj.targets.includes(l.code));
+                },
+
+                get filteredTargetLanguages() {
+                    const available = this.targetLanguages;
+                    if (!this.targetSearch) {
+                        return available;
+                    }
+                    return available.filter(lang =>
+                        lang.name.toLowerCase().includes(this.targetSearch.toLowerCase())
+                    );
+                },
+
+                swapLanguages() {
+                    if (this.sourceLang === 'auto') return;
+                    
+                    const targetLangObj = this.languages.find(l => l.code === this.targetLang);
+                    if (!targetLangObj || !targetLangObj.targets.includes(this.sourceLang)) {
+                        this.error = `Cannot swap: ${this.getLanguageName(this.targetLang)} does not support translating to ${this.getLanguageName(this.sourceLang)}`;
+                        return;
+                    }
+
+                    [this.sourceLang, this.targetLang] = [this.targetLang, this.sourceLang];
+                    [this.sourceText, this.translatedText] = [this.translatedText, this.sourceText];
+                },
+
+                async pasteFromClipboard() {
+                    try {
+                        const text = await navigator.clipboard.readText();
+                        this.sourceText = text;
+                        this.handleInput();
+                    } catch (err) {
+                        this.error = 'Unable to access clipboard';
+                    }
+                },
+
+                handleInput() {
+                    this.error = '';
+                    this.detectedLang = '';
+                    clearTimeout(this.translationTimeout);
+                    if (this.sourceText.trim()) {
+                        this.translationTimeout = setTimeout(() => this.translate(), 500);
+                    } else {
+                        this.translatedText = '';
+                    }
+                },
+
+                async translate() {
+                    if (!this.sourceText.trim()) return;
+
+                    this.isTranslating = true;
+                    this.error = '';
+                    this.detectedLang = '';
+
+                    try {
+                        let actualSourceLang = this.sourceLang;
+                        
+                        if (this.sourceLang === 'auto') {
+                            const detectResponse = await fetch(`${this.baseUrl}/detect`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: `q=${encodeURIComponent(this.sourceText)}`
+                            });
+                            
+                            if (!detectResponse.ok) throw new Error('Detection failed');
+                            
+                            const detections = await detectResponse.json();
+                            if (detections.length > 0 && detections[0].confidence > 0.5) {
+                                actualSourceLang = detections[0].language;
+                                this.detectedLang = actualSourceLang;
+                            } else {
+                                actualSourceLang = 'en'; // fallback
+                            }
+                        }
+
+                        const sourceLangObj = this.languages.find(l => l.code === actualSourceLang);
+                        if (sourceLangObj && !sourceLangObj.targets.includes(this.targetLang)) {
+                            const newTarget = sourceLangObj.targets.includes('en') ? 'en' : sourceLangObj.targets[0];
+                            if (newTarget) {
+                                this.targetLang = newTarget;
+                            } else {
+                                throw new Error(`No valid target language for ${sourceLangObj.name}`);
+                            }
+                        }
+
+                        const formData = new URLSearchParams();
+                        formData.append('q', this.sourceText);
+                        formData.append('source', actualSourceLang);
+                        formData.append('target', this.targetLang);
+                        formData.append('format', 'text');
+
+                        const response = await fetch(`${this.baseUrl}/translate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: formData.toString()
+                        });
+
+                        if (!response.ok) {
+                            const error = await response.json();
+                            throw new Error(error.error || 'Translation failed');
+                        }
+
+                        const result = await response.json();
+                        this.translatedText = result.translatedText;
+                    } catch (err) {
+                        this.error = err.message || 'Translation error occurred';
+                        this.translatedText = '';
+                    } finally {
+                        this.isTranslating = false;
+                    }
+                },
+
+                async copyTranslation() {
+                    try {
+                        await navigator.clipboard.writeText(this.translatedText);
+                        this.copied = true;
+                        setTimeout(() => this.copied = false, 2000);
+                    } catch (err) {
+                        this.error = 'Failed to copy to clipboard';
+                    }
+                },
+
+                async checkConnection() {
+                    try {
+                        const response = await fetch(`${this.baseUrl}/languages`);
+                        this.isConnected = response.ok;
+                        if (this.isConnected && this.languages.length === 0) {
+                            this.fetchLanguages();
+                        }
+                    } catch (err) {
+                        this.isConnected = false;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
