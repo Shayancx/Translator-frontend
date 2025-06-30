@@ -1,3 +1,9 @@
+/*
+========================================
+    G L O B A L   S T Y L E S
+========================================
+*/
+
 /* GitHub-style theme variables */
 :root {
     --color-canvas-default: #ffffff;
@@ -99,7 +105,38 @@ body {
     flex-direction: column;
 }
 
-/* Header */
+.app.loading {
+    pointer-events: none;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-overlay .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--color-border-default);
+    border-top-color: var(--color-accent-emphasis);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/*
+========================================
+    H E A D E R
+========================================
+*/
+
 .header {
     background-color: var(--color-canvas-subtle);
     border-bottom: 1px solid var(--color-border-default);
@@ -179,7 +216,12 @@ h1 {
     background-color: var(--color-btn-hover-bg);
 }
 
-/* Main */
+/*
+========================================
+    M A I N   C O N T E N T
+========================================
+*/
+
 .main {
     flex: 1;
     background-color: var(--color-canvas-default);
@@ -226,9 +268,39 @@ h1 {
     min-width: 120px;
 }
 
+.char-counter-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
 .char-count {
     font-size: 12px;
     color: var(--color-fg-muted);
+    margin-bottom: 4px;
+}
+
+.char-limit-bar {
+    width: 100px;
+    height: 4px;
+    background-color: var(--color-neutral-muted);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.char-limit-bar-inner {
+    height: 100%;
+    background-color: var(--color-success-emphasis);
+    border-radius: 2px;
+    transition: width 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+
+.char-limit-bar-inner.near-limit {
+    background-color: var(--color-attention-emphasis);
+}
+
+.char-limit-bar-inner.at-limit {
+    background-color: var(--color-danger-emphasis);
 }
 
 .btn-icon {
@@ -276,7 +348,8 @@ h1 {
     flex-grow: 1;
 }
 
-.translation-input:focus {
+.translation-input:focus,
+.translation-output:focus {
     outline: none;
 }
 
@@ -467,7 +540,61 @@ body.dark .alert-error {
     color: var(--color-fg-default);
 }
 
-/* Mobile Responsive */
+/*
+========================================
+    T O A S T   N O T I F I C A T I O N S
+========================================
+*/
+
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    padding: 12px 16px;
+    border-radius: 6px;
+    color: var(--color-fg-default);
+    background-color: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border-default);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.toast.toast-success {
+    background-color: var(--color-success-subtle, #dff0d8);
+    border-color: var(--color-success-muted, #c3e6cb);
+    color: var(--color-success-fg);
+}
+
+body.dark .toast.toast-success {
+    background-color: rgba(63, 185, 80, 0.1);
+    border-color: rgba(63, 185, 80, 0.4);
+}
+
+.toast.toast-error {
+    background-color: var(--color-danger-subtle, #f2dede);
+    border-color: var(--color-danger-muted, #ebccd1);
+    color: var(--color-danger-fg);
+}
+
+body.dark .toast.toast-error {
+    background-color: rgba(248, 81, 73, 0.1);
+    border-color: rgba(248, 81, 73, 0.4);
+}
+
+/*
+========================================
+    M E D I A   Q U E R I E S
+========================================
+*/
+
 @media (max-width: 768px) {
     .container {
         padding: 16px;
@@ -574,6 +701,12 @@ body.dark .alert-error {
     }
 }
 
+/*
+========================================
+    S C R O L L B A R   &   T R A N S I T I O N S
+========================================
+*/
+
 /* Scrollbar styling */
 .select-menu-list::-webkit-scrollbar,
 .translation-input::-webkit-scrollbar,
@@ -627,4 +760,26 @@ body,
 /* Specific transition for alert */
 .alert {
     transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Transition for select menu visibility */
+.select-menu {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.select-menu[x-show] {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.select-menu[x-show].x-transition-leave-start,
+.select-menu[x-show].x-transition-enter-end {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.select-menu[x-show].x-transition-leave-end,
+.select-menu[x-show].x-transition-enter-start {
+    opacity: 0;
+    transform: translateY(-10px);
 }
