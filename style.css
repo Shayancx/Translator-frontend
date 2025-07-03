@@ -1,19 +1,47 @@
-/*
-========================================
-    G L O B A L   S T Y L E S
-========================================
-*/
+/**
+ * LibreTranslate Stylesheet
+ * 
+ * Table of Contents:
+ * 1. CSS Variables & Theme Configuration
+ * 2. CSS Reset & Base Styles
+ * 3. Utility Classes
+ * 4. Layout Components
+ * 5. Header Section
+ * 6. Main Content Area
+ * 7. Translation Interface
+ * 8. Form Elements & Controls
+ * 9. Buttons & Interactive Elements
+ * 10. Toast Notifications
+ * 11. Alerts & Messages
+ * 12. Animations & Transitions
+ * 13. Responsive Design
+ * 14. Accessibility Features
+ * 15. Print Styles
+ */
 
-/* GitHub-style theme variables */
+/* ==========================================================================
+   1. CSS Variables & Theme Configuration
+   ========================================================================== */
+
+/**
+ * Light theme variables (GitHub-inspired)
+ */
 :root {
+    /* Canvas/Background colors */
     --color-canvas-default: #ffffff;
     --color-canvas-subtle: #f6f8fa;
     --color-canvas-inset: #f6f8fa;
+    
+    /* Text colors */
     --color-fg-default: #24292f;
     --color-fg-muted: #57606a;
     --color-fg-subtle: #6e7781;
+    
+    /* Border colors */
     --color-border-default: #d0d7de;
     --color-border-muted: #d8dee4;
+    
+    /* Button colors */
     --color-btn-text: #24292f;
     --color-btn-bg: #f6f8fa;
     --color-btn-border: rgba(27, 31, 36, 0.15);
@@ -21,6 +49,8 @@
     --color-btn-hover-border: rgba(27, 31, 36, 0.15);
     --color-btn-active-bg: hsla(220, 14%, 93%, 1);
     --color-btn-selected-bg: hsla(220, 14%, 94%, 1);
+    
+    /* Primary button colors */
     --color-btn-primary-text: #ffffff;
     --color-btn-primary-bg: #2ea043;
     --color-btn-primary-border: rgba(27, 31, 36, 0.15);
@@ -29,6 +59,8 @@
     --color-btn-primary-selected-bg: hsla(137, 55%, 36%, 1);
     --color-btn-primary-disabled-text: rgba(255, 255, 255, 0.8);
     --color-btn-primary-disabled-bg: #94d3a2;
+    
+    /* Semantic colors */
     --color-accent-fg: #0969da;
     --color-accent-emphasis: #0969da;
     --color-danger-fg: #cf222e;
@@ -37,21 +69,33 @@
     --color-success-emphasis: #2ea043;
     --color-attention-fg: #9a6700;
     --color-attention-emphasis: #bf8700;
+    
+    /* Neutral colors */
     --color-neutral-emphasis-plus: #24292f;
     --color-neutral-emphasis: #6e7781;
     --color-neutral-muted: rgba(175, 184, 193, 0.2);
     --color-neutral-subtle: rgba(234, 238, 242, 0.5);
 }
 
+/**
+ * Dark theme variables
+ */
 body.dark {
+    /* Canvas/Background colors */
     --color-canvas-default: #0d1117;
     --color-canvas-subtle: #161b22;
     --color-canvas-inset: #010409;
+    
+    /* Text colors */
     --color-fg-default: #c9d1d9;
     --color-fg-muted: #8b949e;
     --color-fg-subtle: #6e7681;
+    
+    /* Border colors */
     --color-border-default: #30363d;
     --color-border-muted: #21262d;
+    
+    /* Button colors */
     --color-btn-text: #c9d1d9;
     --color-btn-bg: #21262d;
     --color-btn-border: rgba(240, 246, 252, 0.1);
@@ -59,6 +103,8 @@ body.dark {
     --color-btn-hover-border: #8b949e;
     --color-btn-active-bg: #282e33;
     --color-btn-selected-bg: #161b22;
+    
+    /* Primary button colors */
     --color-btn-primary-text: #ffffff;
     --color-btn-primary-bg: #238636;
     --color-btn-primary-border: rgba(240, 246, 252, 0.1);
@@ -67,6 +113,8 @@ body.dark {
     --color-btn-primary-selected-bg: #238636;
     --color-btn-primary-disabled-text: rgba(255, 255, 255, 0.5);
     --color-btn-primary-disabled-bg: rgba(35, 134, 54, 0.6);
+    
+    /* Semantic colors */
     --color-accent-fg: #58a6ff;
     --color-accent-emphasis: #1f6feb;
     --color-danger-fg: #f85149;
@@ -75,20 +123,30 @@ body.dark {
     --color-success-emphasis: #238636;
     --color-attention-fg: #d29922;
     --color-attention-emphasis: #bb8009;
+    
+    /* Neutral colors */
     --color-neutral-emphasis-plus: #c9d1d9;
     --color-neutral-emphasis: #6e7681;
     --color-neutral-muted: rgba(110, 118, 129, 0.4);
     --color-neutral-subtle: rgba(110, 118, 129, 0.1);
 }
 
-/* Reset */
+/* ==========================================================================
+   2. CSS Reset & Base Styles
+   ========================================================================== */
+
+/**
+ * Box-sizing reset
+ */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* Base */
+/**
+ * Base typography and body styles
+ */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
     font-size: 14px;
@@ -99,16 +157,64 @@ body {
     padding: 0;
 }
 
+/**
+ * Main application container
+ */
 .app {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
+/**
+ * Loading state for the app
+ */
 .app.loading {
     pointer-events: none;
 }
 
+/* ==========================================================================
+   3. Utility Classes
+   ========================================================================== */
+
+/**
+ * Screen reader only text
+ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/**
+ * Disable transitions temporarily
+ */
+body.no-transition * {
+    transition: none !important;
+}
+
+/* ==========================================================================
+   4. Layout Components
+   ========================================================================== */
+
+/**
+ * Container for max-width and padding
+ */
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px;
+}
+
+/**
+ * Loading overlay
+ */
 .loading-overlay {
     position: fixed;
     top: 0;
@@ -131,12 +237,13 @@ body {
     animation: spin 1s linear infinite;
 }
 
-/*
-========================================
-    H E A D E R
-========================================
-*/
+/* ==========================================================================
+   5. Header Section
+   ========================================================================== */
 
+/**
+ * Main header container
+ */
 .header {
     background-color: var(--color-canvas-subtle);
     border-bottom: 1px solid var(--color-border-default);
@@ -152,6 +259,9 @@ body {
     justify-content: space-between;
 }
 
+/**
+ * Header left section (logo and title)
+ */
 .header-left {
     display: flex;
     align-items: center;
@@ -168,12 +278,18 @@ h1 {
     margin: 0;
 }
 
+/**
+ * Header right section (status and theme toggle)
+ */
 .header-right {
     display: flex;
     align-items: center;
     gap: 16px;
 }
 
+/**
+ * Connection status indicator
+ */
 .connection-status {
     display: flex;
     align-items: center;
@@ -200,6 +316,11 @@ h1 {
     background-color: var(--color-danger-emphasis);
 }
 
+
+
+/**
+ * Theme toggle button
+ */
 .theme-toggle {
     padding: 5px 8px;
     background-color: transparent;
@@ -216,24 +337,25 @@ h1 {
     background-color: var(--color-btn-hover-bg);
 }
 
-/*
-========================================
-    M A I N   C O N T E N T
-========================================
-*/
+/* ==========================================================================
+   6. Main Content Area
+   ========================================================================== */
 
+/**
+ * Main content wrapper
+ */
 .main {
     flex: 1;
     background-color: var(--color-canvas-default);
 }
 
-.container {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 32px;
-}
+/* ==========================================================================
+   7. Translation Interface
+   ========================================================================== */
 
-/* Translation Interface */
+/**
+ * Translation interface grid layout
+ */
 .translation-interface {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -242,6 +364,9 @@ h1 {
     margin-bottom: 32px;
 }
 
+/**
+ * Translation panel (source and target)
+ */
 .translation-panel {
     background-color: var(--color-canvas-subtle);
     border: 1px solid var(--color-border-default);
@@ -251,6 +376,9 @@ h1 {
     flex-direction: column;
 }
 
+/**
+ * Panel header with language selector and actions
+ */
 .panel-header {
     padding: 8px 16px;
     border-bottom: 1px solid var(--color-border-default);
@@ -268,6 +396,9 @@ h1 {
     min-width: 120px;
 }
 
+/**
+ * Character counter
+ */
 .char-counter-container {
     display: flex;
     flex-direction: column;
@@ -303,39 +434,14 @@ h1 {
     background-color: var(--color-danger-emphasis);
 }
 
-.btn-icon {
-    padding: 4px;
-    background: none;
-    border: none;
-    color: var(--color-fg-muted);
-    cursor: pointer;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    transition: background-color 0.2s, color 0.2s;
+.translation-input-container {
+    position: relative;
+    flex-grow: 1;
 }
 
-.btn-icon:hover {
-    background-color: var(--color-neutral-muted);
-    color: var(--color-fg-default);
-}
-
-.loading-spinner {
-    display: flex;
-    align-items: center;
-}
-
-.loading-spinner svg {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.translation-input,
-.translation-output {
+.translation-input {
     padding: 16px;
+    padding-bottom: 60px; /* Add space for the button */
     min-height: 400px;
     background: none;
     border: none;
@@ -348,16 +454,146 @@ h1 {
     flex-grow: 1;
 }
 
-.translation-input:focus,
-.translation-output:focus {
+.translation-input:focus {
     outline: none;
 }
 
-.translation-output::placeholder {
-    color: var(--color-fg-muted);
+.btn-translate {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    padding: 8px 16px;
+    background-color: var(--color-btn-primary-bg);
+    color: var(--color-btn-primary-text);
+    border: 1px solid var(--color-btn-primary-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Language Select */
+.btn-translate:hover:not(:disabled) {
+    background-color: var(--color-btn-primary-hover-bg);
+}
+
+.btn-translate:disabled {
+    background-color: var(--color-btn-primary-disabled-bg);
+    color: var(--color-btn-primary-disabled-text);
+    cursor: not-allowed;
+}
+
+.translate-button-container {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    box-shadow: var(--color-shadow-small);
+}
+
+.btn-translate-main {
+    padding: 8px 16px;
+    background-color: var(--color-btn-primary-bg);
+    color: var(--color-btn-primary-text);
+    border: 1px solid var(--color-btn-primary-border);
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-translate-main:hover:not(:disabled) {
+    background-color: var(--color-btn-primary-hover-bg);
+}
+
+.btn-translate-main:disabled {
+    background-color: var(--color-btn-primary-disabled-bg);
+    color: var(--color-btn-primary-disabled-text);
+    cursor: not-allowed;
+}
+
+.btn-translate-dropdown {
+    padding: 8px;
+    background-color: var(--color-btn-primary-bg);
+    color: var(--color-btn-primary-text);
+    border: 1px solid var(--color-btn-primary-border);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-translate-dropdown:hover:not(:disabled) {
+    background-color: var(--color-btn-primary-hover-bg);
+}
+
+.btn-translate-dropdown:disabled {
+    background-color: var(--color-btn-primary-disabled-bg);
+    color: var(--color-btn-primary-disabled-text);
+    cursor: not-allowed;
+}
+
+.translate-button-dropdown-container {
+    position: relative;
+}
+
+.translate-menu {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 8px;
+    background-color: var(--color-canvas-default);
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 100;
+    width: 260px;
+    padding: 4px 0;
+}
+
+.translate-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.translate-menu-item:hover {
+    background-color: var(--color-neutral-subtle);
+}
+
+.check-icon {
+    width: 16px;
+    text-align: center;
+    color: var(--color-accent-fg);
+    font-weight: bold;
+}
+
+/**
+ * Swap button container
+ */
+.swap-button-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==========================================================================
+   8. Form Elements & Controls
+   ========================================================================== */
+
+/**
+ * Language selector
+ */
 .language-select {
     position: relative;
     flex: 1;
@@ -398,6 +634,9 @@ h1 {
     flex-shrink: 0;
 }
 
+/**
+ * Detected language indicator
+ */
 .detected-lang {
     color: var(--color-fg-muted);
     font-style: italic;
@@ -405,6 +644,9 @@ h1 {
     white-space: nowrap;
 }
 
+/**
+ * Language selection dropdown menu
+ */
 .select-menu {
     position: absolute;
     top: 100%;
@@ -468,13 +710,33 @@ h1 {
     background-color: var(--color-border-muted);
 }
 
-/* Swap Button */
-.swap-button-container {
+/* ==========================================================================
+   9. Buttons & Interactive Elements
+   ========================================================================== */
+
+/**
+ * Icon buttons
+ */
+.btn-icon {
+    padding: 4px;
+    background: none;
+    border: none;
+    color: var(--color-fg-muted);
+    cursor: pointer;
+    border-radius: 4px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
 }
 
+.btn-icon:hover {
+    background-color: var(--color-neutral-muted);
+    color: var(--color-fg-default);
+}
+
+/**
+ * Swap languages button
+ */
 .swap-button {
     padding: 5px 12px;
     background-color: var(--color-btn-bg);
@@ -498,7 +760,93 @@ h1 {
     cursor: not-allowed;
 }
 
-/* Alert */
+.btn-translate {
+    padding: 5px 12px;
+    background-color: var(--color-btn-primary-bg);
+    color: var(--color-btn-primary-text);
+    border: 1px solid var(--color-btn-primary-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.btn-translate:hover {
+    background-color: var(--color-btn-primary-hover-bg);
+}
+
+/**
+ * Loading spinner
+ */
+.loading-spinner {
+    display: flex;
+    align-items: center;
+}
+
+.loading-spinner svg {
+    animation: spin 1s linear infinite;
+}
+
+/* ==========================================================================
+   10. Toast Notifications
+   ========================================================================== */
+
+/**
+ * Toast container positioning
+ */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/**
+ * Individual toast styling
+ */
+.toast {
+    padding: 12px 16px;
+    border-radius: 6px;
+    color: var(--color-fg-default);
+    background-color: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border-default);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.toast.toast-success {
+    background-color: var(--color-success-subtle, #dff0d8);
+    border-color: var(--color-success-muted, #c3e6cb);
+    color: var(--color-success-fg);
+}
+
+body.dark .toast.toast-success {
+    background-color: rgba(63, 185, 80, 0.1);
+    border-color: rgba(63, 185, 80, 0.4);
+}
+
+.toast.toast-error {
+    background-color: var(--color-danger-subtle, #f2dede);
+    border-color: var(--color-danger-muted, #ebccd1);
+    color: var(--color-danger-fg);
+}
+
+body.dark .toast.toast-error {
+    background-color: rgba(248, 81, 73, 0.1);
+    border-color: rgba(248, 81, 73, 0.4);
+}
+
+/* ==========================================================================
+   11. Alerts & Messages
+   ========================================================================== */
+
+/**
+ * Alert component
+ */
 .alert {
     padding: 16px;
     border-radius: 6px;
@@ -540,61 +888,79 @@ body.dark .alert-error {
     color: var(--color-fg-default);
 }
 
-/*
-========================================
-    T O A S T   N O T I F I C A T I O N S
-========================================
-*/
+/* ==========================================================================
+   12. Animations & Transitions
+   ========================================================================== */
 
-.toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+/**
+ * Spin animation for loading states
+ */
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
-.toast {
-    padding: 12px 16px;
-    border-radius: 6px;
-    color: var(--color-fg-default);
-    background-color: var(--color-canvas-subtle);
-    border: 1px solid var(--color-border-default);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    transition: opacity 0.3s, transform 0.3s;
+/**
+ * Theme transition settings
+ */
+body,
+.header,
+.translation-panel,
+.select-menu,
+.select-menu-search input,
+.connection-status {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-.toast.toast-success {
-    background-color: var(--color-success-subtle, #dff0d8);
-    border-color: var(--color-success-muted, #c3e6cb);
-    color: var(--color-success-fg);
+/**
+ * Interactive element transitions
+ */
+.btn-icon,
+.select-button,
+.swap-button,
+.theme-toggle,
+.select-menu-item,
+.alert-close {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-body.dark .toast.toast-success {
-    background-color: rgba(63, 185, 80, 0.1);
-    border-color: rgba(63, 185, 80, 0.4);
+/**
+ * Alert transitions
+ */
+.alert {
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.toast.toast-error {
-    background-color: var(--color-danger-subtle, #f2dede);
-    border-color: var(--color-danger-muted, #ebccd1);
-    color: var(--color-danger-fg);
+/**
+ * Select menu visibility transitions
+ */
+.select-menu {
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-body.dark .toast.toast-error {
-    background-color: rgba(248, 81, 73, 0.1);
-    border-color: rgba(248, 81, 73, 0.4);
+.select-menu[x-show] {
+    opacity: 1;
+    transform: translateY(0);
 }
 
-/*
-========================================
-    M E D I A   Q U E R I E S
-========================================
-*/
+.select-menu[x-show].x-transition-leave-start,
+.select-menu[x-show].x-transition-enter-end {
+    opacity: 1;
+    transform: translateY(0);
+}
 
+.select-menu[x-show].x-transition-leave-end,
+.select-menu[x-show].x-transition-enter-start {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+/* ==========================================================================
+   13. Responsive Design
+   ========================================================================== */
+
+/**
+ * Tablet breakpoint (768px)
+ */
 @media (max-width: 768px) {
     .container {
         padding: 16px;
@@ -650,6 +1016,9 @@ body.dark .toast.toast-error {
     }
 }
 
+/**
+ * Mobile breakpoint (480px)
+ */
 @media (max-width: 480px) {
     .header {
         padding: 12px 0;
@@ -701,13 +1070,46 @@ body.dark .toast.toast-error {
     }
 }
 
-/*
-========================================
-    S C R O L L B A R   &   T R A N S I T I O N S
-========================================
-*/
+/* ==========================================================================
+   14. Accessibility Features
+   ========================================================================== */
 
-/* Scrollbar styling */
+/**
+ * Focus visible styles
+ */
+:focus-visible {
+    outline: 2px solid var(--color-accent-emphasis);
+    outline-offset: 2px;
+}
+
+/**
+ * Reduced motion preferences
+ */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/**
+ * High contrast mode adjustments
+ */
+@media (prefers-contrast: high) {
+    .translation-panel {
+        border-width: 2px;
+    }
+    
+    .select-button:focus,
+    .select-menu-search input:focus {
+        outline-width: 3px;
+    }
+}
+
+/**
+ * Custom scrollbar styling
+ */
 .select-menu-list::-webkit-scrollbar,
 .translation-input::-webkit-scrollbar,
 .translation-output::-webkit-scrollbar {
@@ -733,53 +1135,132 @@ body.dark .toast.toast-error {
     background: var(--color-fg-muted);
 }
 
-body.no-transition * {
-    transition: none !important;
+/* ==========================================================================
+   15. Print Styles
+   ========================================================================== */
+
+.translation-output-container {
+    position: relative;
+    flex-grow: 1;
 }
 
-/* Specific transition for theme-related properties */
-body,
-.header,
-.translation-panel,
-.select-menu,
-.select-menu-search input,
-.connection-status {
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+.translation-output {
+    padding: 16px;
+    min-height: 400px;
+    background: none;
+    border: none;
+    resize: none;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-fg-default);
+    width: 100%;
+    height: 100%;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
-/* Ensure other interactive elements retain their transitions */
-.btn-icon,
-.select-button,
-.swap-button,
-.theme-toggle,
-.select-menu-item,
-.alert-close {
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+.translation-output span:hover {
+    background-color: var(--color-neutral-muted);
+    cursor: pointer;
 }
 
-/* Specific transition for alert */
-.alert {
-    transition: opacity 0.3s ease, transform 0.3s ease;
+.placeholder-text {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    color: var(--color-fg-muted);
+    pointer-events: none;
 }
 
-/* Transition for select menu visibility */
-.select-menu {
-    transition: opacity 0.2s ease, transform 0.2s ease;
+.word-popup {
+    position: absolute;
+    background-color: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+    width: 320px;
+    max-width: 90vw;
 }
 
-.select-menu[x-show] {
-    opacity: 1;
-    transform: translateY(0);
+.word-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border-default);
 }
 
-.select-menu[x-show].x-transition-leave-start,
-.select-menu[x-show].x-transition-enter-end {
-    opacity: 1;
-    transform: translateY(0);
+.word-popup-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
 }
 
-.select-menu[x-show].x-transition-leave-end,
-.select-menu[x-show].x-transition-enter-start {
-    opacity: 0;
-    transform: translateY(-10px);
+.word-popup-content {
+    padding: 12px;
+    max-height: 250px;
+    overflow-y: auto;
 }
+
+.definition-pos-header {
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-style: italic;
+    color: var(--color-fg-muted);
+}
+
+.definition-gloss {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.definition-examples {
+    list-style-type: none;
+    padding-left: 0;
+    margin-top: 8px;
+    border-left: 2px solid var(--color-border-muted);
+    padding-left: 12px;
+}
+
+.definition-examples li {
+    margin-bottom: 4px;
+    font-style: italic;
+}
+
+.definition-examples .example-translation {
+    color: var(--color-fg-muted);
+    padding-left: 12px;
+}
+
+/**
+ * Print-specific adjustments
+ */
+@media print {
+    .header,
+    .toast-container,
+    .loading-overlay,
+    .btn-icon,
+    .swap-button,
+    .theme-toggle {
+        display: none !important;
+    }
+    
+    .translation-interface {
+        grid-template-columns: 1fr;
+    }
+    
+    .translation-panel {
+        border: 1px solid #000;
+        margin-bottom: 20px;
+        page-break-inside: avoid;
+    }
+    
+    body {
+        color: #000;
+        background: #fff;
+    }
+}
+
+

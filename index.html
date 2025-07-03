@@ -3,52 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LibreTranslate</title>
+    <meta name="description" content="LibreTranslate - Free and open source machine translation">
+    <title>LibreTranslate - Free Translation Service</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
     <script defer src="alpine.min.js"></script>
 </head>
 <body x-data="{ theme: localStorage.getItem('theme') || 'dark' }" :class="theme" x-init="$watch('theme', val => localStorage.setItem('theme', val))">
-    <div class="app" x-data="translator()" :class="{ 'loading': ui.isLoading }">
+    <div class="app" x-data="translator" :class="{ 'loading': ui.isLoading }" role="application" aria-label="LibreTranslate Application">
+
         <!-- Toast Notification Container -->
-        <div class="toast-container">
+        <div class="toast-container" role="region" aria-label="Notifications" aria-live="polite">
             <template x-for="toast in toasts" :key="toast.id">
-                <div class="toast" :class="`toast-${toast.type}`" x-show="toast.visible" @click="removeToast(toast.id)" x-transition>
+                <div class="toast" :class="`toast-${toast.type}`" x-show="toast.visible" @click="removeToast(toast.id)" x-transition role="alert">
                     <span x-text="toast.message"></span>
                 </div>
             </template>
         </div>
 
         <!-- Loading Overlay -->
-        <div class="loading-overlay" x-show="isLoading" x-transition.opacity>
-            <div class="loading-spinner"></div>
+        <div class="loading-overlay" x-show="isLoading" x-transition.opacity aria-hidden="true">
+            <div class="loading-spinner" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
         </div>
 
         <!-- Header -->
-        <header class="header">
+        <header class="header" role="banner">
             <div class="header-content">
                 <div class="header-left">
-                    <svg class="logo" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg class="logo" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/>
                     </svg>
-                    <h1>LibreTranslate</h1>
+                    <h1 id="app-title">LibreTranslate</h1>
                 </div>
                 <div class="header-right">
-                    <div class="connection-status">
-                        <span class="status-dot" :class="isConnected ? 'connected' : 'disconnected'"></span>
-                        <span class="status-text" x-text="isConnected ? baseUrl.replace(/https(s?):\/\//, '') : 'Disconnected'"></span>
+                    <div class="connection-status" role="status" aria-live="polite">
+                        <span class="status-dot" :class="isConnected ? 'connected' : 'disconnected'" aria-hidden="true"></span>
+                        <span class="status-text" x-text="isConnected ? baseUrl.replace(/https?:\/\//, '') : 'Disconnected'"></span>
                     </div>
+                    
                     <button class="theme-toggle" @click="
                         document.body.classList.add('no-transition');
                         theme = theme === 'dark' ? 'light' : 'dark';
-                        requestAnimationFrame(() => {
+                        $nextTick(() => {
                             document.body.classList.remove('no-transition');
                         });
-                    " aria-label="Toggle theme">
-                        <svg x-show="theme === 'dark'" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    " aria-label="Toggle theme" :aria-pressed="theme === 'light'">
+                        <svg x-show="theme === 'dark'" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                             <path d="M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.5.5 0 01.5.5v2a.5.5 0 01-1 0v-2A.5.5 0 018 0zm0 13a.5.5 0 01.5.5v2a.5.5 0 01-1 0v-2A.5.5 0 018 13zm8-5a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2a.5.5 0 01.5.5zM3 8a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2A.5.5 0 013 8zm10.657-5.657a.5.5 0 010 .707l-1.414 1.415a.5.5 0 11-.707-.708l1.414-1.414a.5.5 0 01.707 0zm-9.193 9.193a.5.5 0 010 .707L3.05 13.657a.5.5 0 01-.707-.707l1.414-1.414a.5.5 0 01.707 0zm9.193 2.121a.5.5 0 01-.707 0l-1.414-1.414a.5.5 0 01.707-.707l1.414 1.414a.5.5 0 010 .707zM4.464 4.465a.5.5 0 01-.707 0L2.343 3.05a.5.5 0 11.707-.707l1.414 1.414a.5.5 0 010 .708z"/>
                         </svg>
-                        <svg x-show="theme === 'light'" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <svg x-show="theme === 'light'" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                             <path d="M6 .278a.768.768 0 01.08.858 7.208 7.208 0 00-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 01.81.316.733.733 0 01-.031.893A8.349 8.349 0 018.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 016 .278z"/>
                         </svg>
                     </button>
@@ -57,34 +62,35 @@
         </header>
 
         <!-- Main Content -->
-        <main class="main">
+        <main class="main" role="main" aria-labelledby="app-title">
             <div class="container">
                 <!-- Translation Interface -->
-                <div class="translation-interface">
-                    <div class="translation-panel">
+                <div class="translation-interface" role="region" aria-label="Translation interface">
+                    <div class="translation-panel" role="group" aria-labelledby="source-panel-label">
+                        <h2 id="source-panel-label" class="sr-only">Source text panel</h2>
                         <div class="panel-header">
                             <div class="language-select">
-                                <button class="select-button" @click="ui.sourceMenuOpen = !ui.sourceMenuOpen">
+                                <button class="select-button" @click="ui.sourceMenuOpen = !ui.sourceMenuOpen" aria-haspopup="true" :aria-expanded="ui.sourceMenuOpen" aria-label="Select source language">
                                     <span x-text="getLanguageName(sourceLang)"></span>
                                     <template x-if="sourceLang === 'auto' && detectedLang">
                                         <span class="detected-lang">-&nbsp;</span>
                                         <span class="detected-lang" x-text="getLanguageName(detectedLang)"></span>
                                     </template>
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                                         <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/>
                                     </svg>
                                 </button>
-                                <div class="select-menu" x-show="ui.sourceMenuOpen" @click.outside="ui.sourceMenuOpen = false" x-transition>
+                                <div class="select-menu" x-show="ui.sourceMenuOpen" @click.outside="ui.sourceMenuOpen = false" x-transition role="menu" aria-label="Source language menu">
                                     <div class="select-menu-search">
-                                        <input type="text" x-model.debounce.300ms="ui.sourceSearch" placeholder="Search language..." @keydown.escape.window="ui.sourceMenuOpen = false" x-ref="sourceSearchInput">
+                                        <input type="text" x-model.debounce.300ms="ui.sourceSearch" placeholder="Search language..." @keydown.escape.window="ui.sourceMenuOpen = false" x-ref="sourceSearchInput" aria-label="Search source languages">
                                     </div>
-                                    <div class="select-menu-list">
-                                        <button class="select-menu-item" @click="selectSourceLang('auto')">
+                                    <div class="select-menu-list" role="menuitem">
+                                        <button class="select-menu-item" @click="selectSourceLang('auto')" role="menuitem">
                                             <span class="select-menu-item-text">Auto-detect</span>
                                         </button>
-                                        <div class="select-menu-divider"></div>
+                                        <div class="select-menu-divider" role="separator"></div>
                                         <template x-for="lang in filteredSourceLanguages" :key="lang.code">
-                                            <button class="select-menu-item" @click="selectSourceLang(lang.code)">
+                                            <button class="select-menu-item" @click="selectSourceLang(lang.code)" role="menuitem">
                                                 <span class="select-menu-item-text" x-text="lang.name"></span>
                                             </button>
                                         </template>
@@ -92,62 +98,97 @@
                                 </div>
                             </div>
                             <div class="panel-actions">
-                                <div class="char-counter-container" x-show="charLimit > 0">
+                                <div class="char-counter-container" x-show="charLimit > 0" role="status" aria-live="polite">
                                     <span class="char-count">
                                         <span x-text="sourceText.length"></span> / <span x-text="charLimit"></span>
                                     </span>
-                                    <div class="char-limit-bar">
+                                    <div class="char-limit-bar" role="progressbar" :aria-valuenow="sourceText.length" :aria-valuemax="charLimit">
                                         <div class="char-limit-bar-inner" :style="`width: ${(sourceText.length / charLimit) * 100}%`" :class="{
                                             'near-limit': (sourceText.length / charLimit) > 0.8 && (sourceText.length / charLimit) < 1,
                                             'at-limit': (sourceText.length / charLimit) >= 1
                                         }"></div>
                                     </div>
                                 </div>
+                                <button class="btn-icon" @click="copySourceText" x-show="sourceText" title="Copy source text" aria-label="Copy source text to clipboard">
+                                    <svg x-show="!ui.sourceCopied" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/></svg>
+                                    <svg x-show="ui.sourceCopied" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>
+                                </button>
                                 <button class="btn-icon" @click="pasteFromClipboard" title="Paste" aria-label="Paste text from clipboard">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                                         <path d="M5.75 1a.75.75 0 00-.75.75v3c0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75v-3a.75.75 0 00-.75-.75h-4.5zm.75 3V2.5h3V4h-3zm-2.874-.467a.75.75 0 00-.752-1.298A1.75 1.75 0 002 3.75v9.5c0 .966.784 1.75 1.75 1.75h8.5A1.75 1.75 0 0014 13.25v-9.5a1.75 1.75 0 00-.874-1.515.75.75 0 10-.752 1.298.25.25 0 01.126.217v9.5a.25.25 0 01-.25.25h-8.5a.25.25 0 01-.25-.25v-9.5a.25.25 0 01.126-.217z"/>
                                     </svg>
                                 </button>
                                 <button class="btn-icon" @click="sourceText = ''" x-show="sourceText" title="Clear" aria-label="Clear source text">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                                         <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
                                     </svg>
                                 </button>
                             </div>
                         </div>
-                        <textarea
-                            class="translation-input"
-                            x-model="sourceText"
-                            @input="handleInput"
-                            placeholder="Enter text to translate"
-                            :maxlength="charLimit > 0 ? charLimit : undefined"
-                        ></textarea>
+                        <div class="translation-input-container">
+                            <textarea
+                                class="translation-input"
+                                x-model.debounce.500ms="sourceText"
+                                @input="handleInput"
+                                placeholder="Enter text to translate"
+                                :maxlength="charLimit > 0 ? charLimit : undefined"
+                                aria-label="Source text input"
+                            ></textarea>
+                            <div class="translate-button-container">
+                                <button class="btn-translate-main" @click="translate()" :disabled="!sourceText.trim() || ui.isTranslating || automaticTranslation">
+                                    <svg x-show="ui.isTranslating && automaticTranslation" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z" opacity=".2"/><path d="M8 0a8 8 0 018 8h-1.5A6.5 6.5 0 008 1.5V0z"><animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="1s" repeatCount="indefinite"/></path></svg>
+                                    <span x-text="automaticTranslation ? 'Automatic' : 'Translate'"></span>
+                                </button>
+                                <div class="translate-button-dropdown-container">
+                                    <button class="btn-translate-dropdown" @click="ui.translateMenuOpen = !ui.translateMenuOpen" :disabled="ui.isTranslating">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>
+                                    </button>
+                                    <div class="translate-menu" x-show="ui.translateMenuOpen" @click.outside="ui.translateMenuOpen = false" 
+                                        x-transition:enter="transition ease-out duration-200"
+                                        x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                                        x-transition:leave="transition ease-in duration-150"
+                                        x-transition:leave-start="opacity-100 transform translate-y-0"
+                                        x-transition:leave-end="opacity-0 transform -translate-y-2">
+                                        <div class="translate-menu-item" @click="automaticTranslation = false; ui.translateMenuOpen = false">
+                                            <span class="check-icon" x-show="!automaticTranslation">&#10003;</span>
+                                            <span>Translate Manually</span>
+                                        </div>
+                                        <div class="translate-menu-item" @click="automaticTranslation = true; ui.translateMenuOpen = false">
+                                            <span class="check-icon" x-show="automaticTranslation">&#10003;</span>
+                                            <span>Translate Automatically</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="swap-button-container">
-                        <button class="swap-button" @click="swapLanguages()" :disabled="sourceLang === 'auto'" aria-label="Swap source and target languages">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <button class="swap-button" @click="swapLanguages()" :disabled="sourceLang === 'auto'" aria-label="Swap source and target languages" :aria-disabled="sourceLang === 'auto'">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                                 <path d="M1 11.5a.5.5 0 00.5.5h11.793l-3.147 3.146a.5.5 0 00.708.708l4-4a.5.5 0 000-.708l-4-4a.5.5 0 00-.708.708L13.293 11H1.5a.5.5 0 00-.5.5zm14-7a.5.5 0 01-.5.5H2.707l3.147 3.146a.5.5 0 11-.708.708l-4-4a.5.5 0 010-.708l4-4a.5.5 0 01.708.708L2.707 4H14.5a.5.5 0 01.5.5z"/>
                             </svg>
                         </button>
                     </div>
 
-                    <div class="translation-panel">
+                    <div class="translation-panel" role="group" aria-labelledby="target-panel-label">
+                        <h2 id="target-panel-label" class="sr-only">Target text panel</h2>
                         <div class="panel-header">
                             <div class="language-select">
-                                <button class="select-button" @click="ui.targetMenuOpen = !ui.targetMenuOpen">
+                                <button class="select-button" @click="ui.targetMenuOpen = !ui.targetMenuOpen" aria-haspopup="true" :aria-expanded="ui.targetMenuOpen" aria-label="Select target language">
                                     <span x-text="getLanguageName(targetLang)"></span>
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                                         <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/>
                                     </svg>
                                 </button>
-                                <div class="select-menu" x-show="ui.targetMenuOpen" @click.outside="ui.targetMenuOpen = false" x-transition>
+                                <div class="select-menu" x-show="ui.targetMenuOpen" @click.outside="ui.targetMenuOpen = false" x-transition role="menu" aria-label="Target language menu">
                                     <div class="select-menu-search">
-                                        <input type="text" x-model.debounce.300ms="ui.targetSearch" placeholder="Search language..." @keydown.escape.window="ui.targetMenuOpen = false" x-ref="targetSearchInput">
+                                        <input type="text" x-model.debounce.300ms="ui.targetSearch" placeholder="Search language..." @keydown.escape.window="ui.targetMenuOpen = false" x-ref="targetSearchInput" aria-label="Search target languages">
                                     </div>
-                                    <div class="select-menu-list">
+                                    <div class="select-menu-list" role="menuitem">
                                         <template x-for="lang in filteredTargetLanguages" :key="lang.code">
-                                            <button class="select-menu-item" @click="selectTargetLang(lang.code)">
+                                            <button class="select-menu-item" @click="selectTargetLang(lang.code)" role="menuitem">
                                                 <span class="select-menu-item-text" x-text="lang.name"></span>
                                             </button>
                                         </template>
@@ -155,43 +196,78 @@
                                 </div>
                             </div>
                             <div class="panel-actions">
-                                <div class="loading-spinner" x-show="ui.isTranslating">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <div class="loading-spinner" x-show="ui.isTranslating" role="status">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                                         <path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z" opacity="0.2"/>
                                         <path d="M8 0a8 8 0 018 8h-1.5A6.5 6.5 0 008 1.5V0z">
                                             <animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="1s" repeatCount="indefinite"/>
                                         </path>
                                     </svg>
+                                    <span class="sr-only">Translating...</span>
                                 </div>
                                 <button class="btn-icon" @click="copyTranslation" x-show="translatedText && !ui.isTranslating" title="Copy translation" aria-label="Copy translation to clipboard">
-                                    <svg x-show="!ui.copied" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <svg x-show="!ui.copied" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                                         <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
                                         <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
                                     </svg>
-                                    <svg x-show="ui.copied" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <svg x-show="ui.copied" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                                         <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/>
                                     </svg>
                                 </button>
                             </div>
                         </div>
-                        <textarea
-                            class="translation-output"
-                            x-model="translatedText"
-                            readonly
-                            placeholder="Translation will appear here"
-                            aria-live="polite"
-                        ></textarea>
+                        <div class="translation-output-container">
+                            <div
+                                class="translation-output"
+                                x-html="highlightedTranslatedText"
+                                @dblclick="handleWordDoubleClick"
+                                readonly
+                                aria-live="polite"
+                                aria-label="Translation output"
+                            ></div>
+                            <div x-show="!translatedText" class="placeholder-text">Translation will appear here</div>
+                        </div>
+                        <!-- Word Definition Popover -->
+                        <div x-show="ui.showDefinition" class="word-popup" :style="`top: ${ui.popupTop}px; left: ${ui.popupLeft}px`" x-transition @click.outside="ui.showDefinition = false">
+
+                            <div class="word-popup-header">
+
+                                <h3 x-text="ui.selectedWord"></h3>
+
+                                <button class="btn-icon" @click="ui.showDefinition = false" aria-label="Close definition">
+
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+
+                                        <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+
+                                    </svg>
+
+                                </button>
+
+                            </div>
+
+                            <div x-show="ui.definitionLoading" class="loading-spinner"></div>
+
+                            <div x-show="!ui.definitionLoading && ui.wordDefinition" class="word-popup-content" x-html="ui.wordDefinition"></div>
+
+                            <div x-show="!ui.definitionLoading && !ui.wordDefinition" class="word-popup-content">
+
+                                No definition found for <strong x-text="ui.selectedWord"></strong>.
+
+                            </div>
+
+                        </div>
                     </div>
                 </div>
 
                 <!-- Error Message -->
-                <div class="alert alert-error" x-show="ui.error" x-transition aria-live="assertive">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <div class="alert alert-error" x-show="ui.error" x-transition aria-live="assertive" role="alert">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                         <path d="M8.22 1.754a.25.25 0 00-.44 0L1.698 13.132a.25.25 0 00.22.368h12.164a.25.25 0 00.22-.368L8.22 1.754zm-1.763-.707c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0114.082 15H1.918a1.75 1.75 0 01-1.543-2.575L6.457 1.047zM9 11a1 1 0 11-2 0 1 1 0 012 0zm-.25-5.25a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0v-2.5z"/>
                     </svg>
                     <span x-text="ui.error"></span>
                     <button class="alert-close" @click="ui.error = ''" aria-label="Close error message">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                             <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
                         </svg>
                     </button>
@@ -200,7 +276,389 @@
         </main>
     </div>
 
-    <script defer src="alpine.min.js"></script>
-    <script src="script.js"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('translator', () => ({
+                // --- CONFIGURATION ---
+                baseUrl: 'http://192.168.2.77:5000',
+                debounceTimeout: 500,
+                connectionInterval: 15000,
+                toastDuration: 3000,
+
+                // --- STATE ---
+                languages: [],
+                sourceLang: 'auto',
+                targetLang: 'en',
+                detectedLang: '',
+                sourceText: '',
+                translatedText: '',
+                charLimit: -1,
+                isConnected: false,
+                translationTimeout: null,
+
+                automaticTranslation: true,
+
+                // --- UI STATE ---
+                ui: {
+                    isLoading: true,
+                    isTranslating: false,
+                    copied: false,
+                    sourceCopied: false,
+                    error: '',
+                    sourceMenuOpen: false,
+                    targetMenuOpen: false,
+                    sourceSearch: '',
+                    targetSearch: '',
+                    settingsMenuOpen: false,
+                    translateMenuOpen: false,
+                    showDefinition: false,
+                    selectedWord: '',
+                    wordDefinition: '',
+                    definitionLoading: false,
+                    popupTop: 0,
+                    popupLeft: 0
+                },
+
+                // --- TOASTS ---
+                toasts: [],
+                nextToastId: 0,
+
+                // --- INITIALIZATION ---
+                init() {
+                    this.loadInitialData();
+                    this.setupWatchers();
+                    this.startConnectionMonitor();
+                },
+
+                handleWordDoubleClick(event) {
+                    const word = event.target.innerText.trim();
+                    if (event.target.tagName === 'SPAN' && word) {
+                        this.ui.selectedWord = word;
+                        this.ui.showDefinition = true;
+                        const rect = event.target.getBoundingClientRect();
+                        this.ui.popupTop = rect.bottom + window.scrollY;
+                        this.ui.popupLeft = rect.left + window.scrollX;
+                        this.fetchDefinition();
+                    }
+                },
+
+                async fetchDefinition() {
+                    this.ui.definitionLoading = true;
+                    this.ui.wordDefinition = '';
+                    try {
+                        const response = await fetch(`/search?word=${this.ui.selectedWord}`);
+                        const data = await response.json();
+                        if (data.length > 0) {
+                            this.ui.wordDefinition = this.formatSenses(data[0]);
+                        } else {
+                            this.ui.wordDefinition = null;
+                        }
+                    } catch (error) {
+                        this.ui.wordDefinition = null;
+                    } finally {
+                        this.ui.definitionLoading = false;
+                    }
+                },
+
+                formatSenses(data) {
+                    if (!data || !data.senses) return '';
+
+                    let html = '';
+
+                    data.senses.forEach(sense => {
+                        if (sense.pos) {
+                            html += `<div class="definition-pos-header">${sense.pos}</div>`;
+                        }
+                        if (sense.glosses) {
+                            html += '<div class="definition-gloss">' + sense.glosses.join(', ') + '</div>';
+                        }
+                        if (sense.examples) {
+                            html += '<ul class="definition-examples">';
+                            sense.examples.forEach(example => {
+                                html += `<li>${example.text}</li>`;
+                                if (example.translation) {
+                                    html += `<li class="example-translation">${example.translation}</li>`;
+                                }
+                            });
+                            html += '</ul>';
+                        }
+                    });
+
+                    return html;
+                },
+
+                setupWatchers() {
+                    const savedSourceLang = localStorage.getItem('sourceLang');
+                    if (savedSourceLang) this.sourceLang = JSON.parse(savedSourceLang);
+
+                    const savedTargetLang = localStorage.getItem('targetLang');
+                    if (savedTargetLang) this.targetLang = JSON.parse(savedTargetLang);
+
+                    const savedAutoTranslate = localStorage.getItem('automaticTranslation');
+                    if (savedAutoTranslate) this.automaticTranslation = JSON.parse(savedAutoTranslate);
+
+                    this.$watch('sourceLang', val => localStorage.setItem('sourceLang', JSON.stringify(val)));
+                    this.$watch('targetLang', val => localStorage.setItem('targetLang', JSON.stringify(val)));
+                    this.$watch('automaticTranslation', val => {
+                        localStorage.setItem('automaticTranslation', JSON.stringify(val));
+                        this.addToast(`Automatic translation ${val ? 'enabled' : 'disabled'}.`, 'info');
+                    });
+                    this.$watch('ui.sourceMenuOpen', isOpen => this.handleMenuToggle(isOpen, 'source'));
+                    this.$watch('ui.targetMenuOpen', isOpen => this.handleMenuToggle(isOpen, 'target'));
+                },
+
+                startConnectionMonitor() {
+                    setInterval(() => this.checkConnection(), this.connectionInterval);
+                },
+
+                async loadInitialData() {
+                    this.ui.isLoading = true;
+                    try {
+                        const [languages, settings] = await Promise.all([
+                            this.apiGetLanguages(),
+                            this.apiGetSettings()
+                        ]);
+                        
+                        this.languages = languages;
+                        this.isConnected = true;
+                        
+                        if (this.languages.length > 0 && !this.languages.find(l => l.code === this.targetLang)) {
+                            this.targetLang = this.languages[0].code;
+                        }
+                        
+                        this.charLimit = settings.charLimit || -1;
+                    } catch (err) {
+                        this.ui.error = 'Failed to initialize application. Please check the connection to the server.';
+                        this.isConnected = false;
+                    } finally {
+                        this.ui.isLoading = false;
+                    }
+                },
+
+                // --- API METHODS ---
+                async apiFetch(endpoint, options = {}) {
+                    const url = `${this.baseUrl}${endpoint}`;
+                    try {
+                        const response = await fetch(url, options);
+                        if (!response.ok) {
+                            let errorMsg = `HTTP error! status: ${response.status}`;
+                            try {
+                                const errorData = await response.json();
+                                errorMsg = errorData.error || errorMsg;
+                            } catch (e) { /* Ignore */ }
+                            throw new Error(errorMsg);
+                        }
+                        return response.json();
+                    } catch (err) {
+                        console.error(`API Error (${endpoint}):`, err);
+                        if (err instanceof TypeError && err.message === 'Failed to fetch') {
+                            throw new Error('Network error. Please check your connection.');
+                        }
+                        throw err;
+                    }
+                },
+                apiGetLanguages() { return this.apiFetch('/languages'); },
+                apiGetSettings() { return this.apiFetch('/frontend/settings'); },
+                apiDetectLanguage(text) {
+                    return this.apiFetch('/detect', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `q=${encodeURIComponent(text)}`
+                    });
+                },
+                apiTranslate(text, source, target) {
+                    const formData = new URLSearchParams();
+                    formData.append('q', text);
+                    formData.append('source', source);
+                    formData.append('target', target);
+                    formData.append('format', 'text');
+                    return this.apiFetch('/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData.toString()
+                    });
+                },
+
+                // --- TOAST METHODS ---
+                addToast(message, type = 'info', duration = this.toastDuration) {
+                    const id = this.nextToastId++;
+                    const toast = { id, message, type, visible: true };
+                    this.toasts.push(toast);
+                    setTimeout(() => this.removeToast(id), duration);
+                },
+                removeToast(id) {
+                    const toast = this.toasts.find(t => t.id === id);
+                    if (toast) {
+                        toast.visible = false;
+                        setTimeout(() => {
+                            this.toasts = this.toasts.filter(t => t.id !== id);
+                        }, 500);
+                    }
+                },
+
+                // --- LANGUAGE METHODS ---
+                getLanguageName(code) {
+                    if (code === 'auto') return 'Auto-detect';
+                    const lang = this.languages.find(l => l.code === code);
+                    return lang ? lang.name : code;
+                },
+                filterLanguages(languages, searchTerm) {
+                    if (!searchTerm) return languages;
+                    const term = searchTerm.toLowerCase();
+                    return languages.filter(lang => lang.name.toLowerCase().includes(term));
+                },
+                getTargetLanguages(sourceLang) {
+                    if (sourceLang === 'auto') return this.languages;
+                    const source = this.languages.find(l => l.code === sourceLang);
+                    if (!source) return this.languages;
+                    return this.languages.filter(l => source.targets.includes(l.code));
+                },
+                isValidTarget(sourceLang, targetLang) {
+                    const source = this.languages.find(l => l.code === sourceLang);
+                    return source && source.targets.includes(targetLang);
+                },
+
+                // --- COMPUTED PROPERTIES ---
+                get filteredSourceLanguages() {
+                    return this.filterLanguages(this.languages, this.ui.sourceSearch);
+                },
+                get targetLanguages() {
+                    return this.getTargetLanguages(this.sourceLang);
+                },
+                get filteredTargetLanguages() {
+                    return this.filterLanguages(this.targetLanguages, this.ui.targetSearch);
+                },
+
+                get highlightedTranslatedText() {
+                    if (!this.translatedText) return '';
+                    return this.translatedText.split(/\s+/).map(word => `<span>${word}</span>`).join(' ');
+                },
+
+                // --- UI ACTIONS ---
+                selectSourceLang(code) {
+                    if (code === this.targetLang) this.swapLanguages();
+                    else this.sourceLang = code;
+                    this.ui.sourceMenuOpen = false;
+                    if (this.sourceText) this.translate();
+                },
+                selectTargetLang(code) {
+                    if (code === this.sourceLang) this.swapLanguages();
+                    else this.targetLang = code;
+                    this.ui.targetMenuOpen = false;
+                    if (this.sourceText) this.translate();
+                },
+                handleMenuToggle(isOpen, type) {
+                    if (isOpen) {
+                        this.$nextTick(() => this.$refs[`${type}SearchInput`]?.focus());
+                    } else {
+                        this.ui[`${type}Search`] = '';
+                    }
+                },
+                swapLanguages() {
+                    if (this.sourceLang === 'auto') return;
+                    if (!this.isValidTarget(this.targetLang, this.sourceLang)) {
+                        this.ui.error = `Cannot swap: ${this.getLanguageName(this.targetLang)} does not support translating to ${this.getLanguageName(this.sourceLang)}`;
+                        return;
+                    }
+                    [this.sourceLang, this.targetLang] = [this.targetLang, this.sourceLang];
+                    [this.sourceText, this.translatedText] = [this.translatedText, this.sourceText];
+                },
+                async pasteFromClipboard() {
+                    try {
+                        const text = await navigator.clipboard.readText();
+                        this.sourceText = text;
+                        this.handleInput();
+                    } catch (err) {
+                        this.ui.error = 'Unable to access clipboard. Please grant permission in your browser.';
+                    }
+                },
+                async copyTranslation() {
+                    if (!this.translatedText) return;
+                    try {
+                        await navigator.clipboard.writeText(this.translatedText);
+                        this.ui.copied = true;
+                        setTimeout(() => this.ui.copied = false, 2000);
+                    } catch (err) {
+                        this.addToast('Failed to copy to clipboard.', 'error');
+                    }
+                },
+
+                async copySourceText() {
+                    if (!this.sourceText) return;
+                    try {
+                        await navigator.clipboard.writeText(this.sourceText);
+                        this.ui.sourceCopied = true;
+                        setTimeout(() => this.ui.sourceCopied = false, 2000);
+                    } catch (err) {
+                        this.addToast('Failed to copy to clipboard.', 'error');
+                    }
+                },
+
+                // --- TRANSLATION LOGIC ---
+                handleInput() {
+                    this.ui.error = '';
+                    this.detectedLang = '';
+                    if (this.translationTimeout) clearTimeout(this.translationTimeout);
+
+                    if (this.sourceText.trim()) {
+                        if (this.automaticTranslation) {
+                            this.ui.isTranslating = true;
+                            this.translationTimeout = setTimeout(() => this.translate(), this.debounceTimeout);
+                        }
+                    } else {
+                        this.translatedText = '';
+                        this.ui.isTranslating = false;
+                    }
+                },
+                _validateTargetLanguage(sourceLang) {
+                    const sourceLangObj = this.languages.find(l => l.code === sourceLang);
+                    if (sourceLangObj && !sourceLangObj.targets.includes(this.targetLang)) {
+                        const newTarget = sourceLangObj.targets.includes('en') ? 'en' : (sourceLangObj.targets[0] || 'en');
+                        this.targetLang = newTarget;
+                    }
+                },
+                async translate() {
+                    if (!this.sourceText.trim()) return;
+                    
+                    this.ui.isTranslating = true;
+                    this.ui.error = '';
+                    this.detectedLang = '';
+                    
+                    try {
+                        let source = this.sourceLang;
+                        if (source === 'auto') {
+                            const detections = await this.apiDetectLanguage(this.sourceText);
+                            if (detections.length > 0 && detections[0].confidence > 0.5) {
+                                source = detections[0].language;
+                                this.detectedLang = source;
+                                this._validateTargetLanguage(source);
+                            } else {
+                                source = 'en'; // Fallback
+                            }
+                        }
+
+                        const result = await this.apiTranslate(this.sourceText, source, this.targetLang);
+                        this.translatedText = result.translatedText;
+                    } catch (err) {
+                        this.ui.error = err.message || 'An unknown translation error occurred.';
+                        this.translatedText = '';
+                    }
+                    finally {
+                        this.ui.isTranslating = false;
+                    }
+                },
+
+                // --- HEALTH CHECK ---
+                async checkConnection() {
+                    try {
+                        await this.apiGetLanguages();
+                        this.isConnected = true;
+                    } catch (err) {
+                        this.isConnected = false;
+                    }
+                }
+            }));
+        });
+    </script>
 </body>
 </html>
