@@ -1184,13 +1184,27 @@ body,
     max-width: 90vw;
 }
 
+.word-popup.top {
+    transform-origin: bottom center;
+}
+.word-popup.top::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 20px;
+    border: 8px solid transparent;
+    border-top-color: var(--color-border-default);
+}
+
 .word-popup-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
+    background-color: var(--color-canvas-subtle);
     border-bottom: 1px solid var(--color-border-default);
 }
+
 
 .word-popup-header h3 {
     margin: 0;
@@ -1262,5 +1276,3 @@ body,
         background: #fff;
     }
 }
-
-
