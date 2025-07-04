@@ -29,18 +29,65 @@ class App < Roda
 
     r.on 'search' do
       r.get do
-        word = r.params['word']
+        word = r.params['word'].to_s.strip.downcase
+        
         response = es_client.search(
           index: 'wiktionary',
           body: {
             query: {
-              match: {
-                word: word
+              bool: {
+                should: [
+                  # Exact match gets highest priority
+                  {
+                    term: {
+                      "word.keyword" => {
+                        value: word,
+                        boost: 100
+                      }
+                    }
+                  },
+                  # Case-insensitive exact match
+                  {
+                    match_phrase: {
+                      word: {
+                        query: word,
+                        boost: 50
+                      }
+                    }
+                  },
+                  # Fuzzy match for typos (lowest priority)
+                  {
+                    match: {
+                      word: {
+                        query: word,
+                        fuzziness: "AUTO",
+                        prefix_length: 2,
+                        boost: 1
+                      }
+                    }
+                  }
+                ],
+                minimum_should_match: 1
               }
-            }
+            },
+            size: 10
           }
         )
-        response['hits']['hits'].map { |hit| hit['_source'] }
+        
+        # Filter to return only the highest scoring result
+        hits = response['hits']['hits']
+        if hits.any?
+          # Find exact match first
+          exact = hits.find { |h| h['_source']['word'].downcase == word }
+          if exact
+            [exact['_source']]
+          else
+            # Return highest scoring result
+            [hits.first['_source']]
+          end
+        else
+          []
+        end
       end
     end
   end
