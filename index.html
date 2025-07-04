@@ -63,7 +63,7 @@
 
         <!-- Main Content -->
         <main class="main" role="main" aria-labelledby="app-title">
-            <div class="container">
+            <div class="container" :class="{ 'panel-open': ui.showDefinition }">
                 <!-- Translation Interface -->
                 <div class="translation-interface" role="region" aria-label="Translation interface">
                     <div class="translation-panel" role="group" aria-labelledby="source-panel-label">
@@ -98,15 +98,28 @@
                                 </div>
                             </div>
                             <div class="panel-actions">
-                                <div class="char-counter-container" x-show="charLimit > 0" role="status" aria-live="polite">
-                                    <span class="char-count">
-                                        <span x-text="sourceText.length"></span> / <span x-text="charLimit"></span>
-                                    </span>
-                                    <div class="char-limit-bar" role="progressbar" :aria-valuenow="sourceText.length" :aria-valuemax="charLimit">
-                                        <div class="char-limit-bar-inner" :style="`width: ${(sourceText.length / charLimit) * 100}%`" :class="{
-                                            'near-limit': (sourceText.length / charLimit) > 0.8 && (sourceText.length / charLimit) < 1,
-                                            'at-limit': (sourceText.length / charLimit) >= 1
-                                        }"></div>
+                                <div class="char-limit-indicator" 
+                                     x-show="charLimit > 0"
+                                     :class="{
+                                         'warning': sourceText.length > charLimit * 0.8,
+                                         'danger': sourceText.length >= charLimit
+                                     }">
+                                    <div class="char-limit-ring">
+                                        <svg width="40" height="40" viewBox="0 0 40 40">
+                                            <circle cx="20" cy="20" r="18" fill="none" stroke="var(--ring-bg)" stroke-width="3"/>
+                                            <circle cx="20" cy="20" r="18" fill="none" 
+                                                    stroke="currentColor" 
+                                                    stroke-width="3"
+                                                    stroke-dasharray="113"
+                                                    :stroke-dashoffset="113 - (113 * Math.min(sourceText.length / charLimit, 1))"
+                                                    transform="rotate(-90 20 20)"/>
+                                        </svg>
+                                        <div class="char-limit-text">
+                                            <span x-text="charLimit - sourceText.length"></span>
+                                        </div>
+                                    </div>
+                                    <div class="char-limit-message" x-show="sourceText.length > charLimit * 0.8">
+                                        <span x-text="sourceText.length >= charLimit ? 'Character limit reached!' : `${charLimit - sourceText.length} characters remaining`"></span>
                                     </div>
                                 </div>
                                 <button class="btn-icon" @click="copySourceText" x-show="sourceText" title="Copy source text" aria-label="Copy source text to clipboard">
@@ -136,31 +149,32 @@
                                 :maxlength="charLimit > 0 ? charLimit : undefined"
                                 aria-label="Source text input"
                             ></textarea>
-                            <div class="translate-button-container">
-                                <button class="btn-translate-main" @click="translate()" :disabled="!sourceText.trim() || ui.isTranslating || automaticTranslation">
-                                    <svg x-show="ui.isTranslating && automaticTranslation" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z" opacity=".2"/><path d="M8 0a8 8 0 018 8h-1.5A6.5 6.5 0 008 1.5V0z"><animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="1s" repeatCount="indefinite"/></path></svg>
-                                    <span x-text="automaticTranslation ? 'Automatic' : 'Translate'"></span>
-                                </button>
-                                <div class="translate-button-dropdown-container">
-                                    <button class="btn-translate-dropdown" @click="ui.translateMenuOpen = !ui.translateMenuOpen" :disabled="ui.isTranslating">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>
-                                    </button>
-                                    <div class="translate-menu" x-show="ui.translateMenuOpen" @click.outside="ui.translateMenuOpen = false" 
-                                        x-transition:enter="transition ease-out duration-200"
-                                        x-transition:enter-start="opacity-0 transform -translate-y-2"
-                                        x-transition:enter-end="opacity-100 transform translate-y-0"
-                                        x-transition:leave="transition ease-in duration-150"
-                                        x-transition:leave-start="opacity-100 transform translate-y-0"
-                                        x-transition:leave-end="opacity-0 transform -translate-y-2">
-                                        <div class="translate-menu-item" @click="automaticTranslation = false; ui.translateMenuOpen = false">
-                                            <span class="check-icon" x-show="!automaticTranslation">&#10003;</span>
-                                            <span>Translate Manually</span>
-                                        </div>
-                                        <div class="translate-menu-item" @click="automaticTranslation = true; ui.translateMenuOpen = false">
-                                            <span class="check-icon" x-show="automaticTranslation">&#10003;</span>
-                                            <span>Translate Automatically</span>
-                                        </div>
+                            <div class="translation-controls">
+                                <div class="auto-translate-toggle" 
+                                     @click="automaticTranslation = !automaticTranslation"
+                                     :class="{ 'active': automaticTranslation }">
+                                    <div class="toggle-track">
+                                        <span class="toggle-label off">Manual</span>
+                                        <span class="toggle-label on">Auto</span>
+                                        <div class="toggle-thumb"></div>
                                     </div>
+                                </div>
+                                
+                                <button class="btn-translate" 
+                                        @click="translate()" 
+                                        :disabled="!sourceText.trim() || ui.isTranslating"
+                                        x-show="!automaticTranslation">
+                                    <span>Translate</span>
+                                </button>
+                                
+                                <div class="auto-status" x-show="automaticTranslation && sourceText">
+                                    <svg class="auto-status-icon" x-show="ui.isTranslating" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z" opacity=".2"/>
+                                        <path d="M8 0a8 8 0 018 8h-1.5A6.5 6.5 0 008 1.5V0z">
+                                            <animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="1s" repeatCount="indefinite"/>
+                                        </path>
+                                    </svg>
+                                    <span x-text="ui.isTranslating ? 'Translating...' : 'Ready'"></span>
                                 </div>
                             </div>
                         </div>
@@ -218,58 +232,31 @@
                             </div>
                         </div>
                         <div class="translation-output-container">
-                            <div
-                                class="translation-output"
-                                x-html="highlightedTranslatedText"
-                                @dblclick="handleWordDoubleClick"
-                                readonly
-                                aria-live="polite"
-                                aria-label="Translation output"
-                            ></div>
+                            <div class="translation-output" 
+                                 x-html="translatedText ? translatedText.split(/\s+/).map((word, index) => 
+                                    `<span class='word-interactive' 
+                                           @mouseenter='showWordPreview($event, &quot;${word.replace(/'/g, '\\\'')}&quot;, ${index})' 
+                                           @mouseleave='hideWordPreview(${index})'
+                                           @click='selectWord(&quot;${word.replace(/'/g, '\\\'')}&quot;)'
+                                           :class='{ &quot;word-selected&quot;: ui.selectedWord === &quot;${word.replace(/'/g, '\\\'')}&quot; }'
+                                           data-word-index='${index}'>${word}</span>`
+                                 ).join(' ') : ''"
+                                 aria-live="polite"
+                                 aria-label="Translation output">
+                            </div>
                             <div x-show="!translatedText" class="placeholder-text">Translation will appear here</div>
-                            <div x-show="translatedText && !ui.showDefinition" 
-                                 x-transition 
-                                 class="translation-help-hint">
-                                Double-click any word for definition
+                            
+                            <!-- Inline word preview (shows on hover) -->
+                            <div class="word-preview" 
+                                 x-show="ui.wordPreview.visible" 
+                                 :style="`top: ${ui.wordPreview.top}px; left: ${ui.wordPreview.left}px`"
+                                 x-transition.opacity.duration.200ms>
+                                <div class="word-preview-content">
+                                    <div class="word-preview-word" x-text="ui.wordPreview.word"></div>
+                                    <div class="word-preview-hint">Click for full definition</div>
+                                </div>
                             </div>
                         </div>
-                        <!-- Word Definition Popover -->
-                        <div x-show="ui.showDefinition" 
-                             class="word-popup" 
-                             :class="ui.popupPosition"
-                             :style="`top: ${ui.popupTop}px; left: ${ui.popupLeft}px`" 
-                             x-transition 
-                             @click.outside="ui.showDefinition = false">
-
-                            <div class="word-popup-header">
-
-                                <h3 x-text="ui.selectedWord"></h3>
-
-                                <button class="btn-icon" @click="ui.showDefinition = false" aria-label="Close definition">
-
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-
-                                        <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
-
-                                    </svg>
-
-                                </button>
-
-                            </div>
-
-                            <div x-show="ui.definitionLoading" class="loading-spinner"></div>
-
-                            <div x-show="!ui.definitionLoading && ui.wordDefinition" class="word-popup-content" x-html="ui.wordDefinition"></div>
-
-                            <div x-show="!ui.definitionLoading && !ui.wordDefinition" class="word-popup-content">
-
-                                No definition found for <strong x-text="ui.selectedWord"></strong>.
-
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
                     </div>
                 </div>
 
@@ -287,6 +274,50 @@
                 </div>
             </div>
         </main>
+
+        <!-- Definition Panel -->
+        <div class="definition-panel" 
+             :class="{ 'open': ui.showDefinition }"
+             x-show="ui.selectedWord"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="transform translate-x-full"
+             x-transition:enter-end="transform translate-x-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="transform translate-x-0"
+             x-transition:leave-end="transform translate-x-full">
+            
+            <div class="definition-panel-header">
+                <h3 x-text="ui.selectedWord"></h3>
+                <button class="btn-icon" @click="ui.showDefinition = false; ui.selectedWord = ''">
+                    <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="definition-panel-content">
+                <div x-show="ui.definitionLoading" class="definition-loading">
+                    <div class="loading-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+                
+                <div x-show="!ui.definitionLoading && ui.wordDefinition" 
+                     x-html="ui.wordDefinition"></div>
+                
+                <div x-show="!ui.definitionLoading && !ui.wordDefinition" 
+                     class="no-definition">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <p>No definition found</p>
+                    <button class="btn-secondary" @click="ui.showDefinition = false; ui.selectedWord = ''">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -325,9 +356,15 @@
                     selectedWord: '',
                     wordDefinition: '',
                     definitionLoading: false,
-                    popupTop: 0,
-                    popupLeft: 0,
-                    popupPosition: 'bottom'
+                    sourceSearch: '',
+                    targetSearch: '',
+                    wordPreview: {
+                        visible: false,
+                        word: '',
+                        top: 0,
+                        left: 0,
+                        index: -1
+                    }
                 },
 
                 // --- TOASTS ---
@@ -341,38 +378,27 @@
                     this.startConnectionMonitor();
                 },
 
-                handleWordDoubleClick(event) {
-                    const word = event.target.innerText.trim();
-                    if (event.target.tagName === 'SPAN' && word) {
-                        this.ui.selectedWord = word;
-                        const rect = event.target.getBoundingClientRect();
-                        const viewportWidth = window.innerWidth;
-                        const viewportHeight = window.innerHeight;
-                        const popupWidth = 320;
-                        const popupHeight = 300;
-                        
-                        // Calculate position
-                        let top = rect.bottom + window.scrollY + 8;
-                        let left = rect.left + window.scrollX;
-                        
-                        // Flip to top if too close to bottom
-                        if (rect.bottom + popupHeight > viewportHeight - 20) {
-                            top = rect.top + window.scrollY - popupHeight - 8;
-                            this.ui.popupPosition = 'top';
-                        } else {
-                            this.ui.popupPosition = 'bottom';
-                        }
-                        
-                        // Adjust horizontal position
-                        if (left + popupWidth > viewportWidth - 20) {
-                            left = viewportWidth - popupWidth - 20;
-                        }
-                        
-                        this.ui.popupTop = top;
-                        this.ui.popupLeft = left;
-                        this.ui.showDefinition = true;
-                        this.fetchDefinition();
+                showWordPreview(event, word, index) {
+                    const rect = event.target.getBoundingClientRect();
+                    this.ui.wordPreview = {
+                        visible: true,
+                        word: word,
+                        top: rect.top - 40,
+                        left: rect.left,
+                        index: index
+                    };
+                },
+
+                hideWordPreview(index) {
+                    if (this.ui.wordPreview.index === index) {
+                        this.ui.wordPreview.visible = false;
                     }
+                },
+
+                selectWord(word) {
+                    this.ui.selectedWord = word;
+                    this.ui.showDefinition = true;
+                    this.fetchDefinition();
                 },
 
                 async fetchDefinition() {
@@ -560,11 +586,6 @@
                 },
                 get filteredTargetLanguages() {
                     return this.filterLanguages(this.targetLanguages, this.ui.targetSearch);
-                },
-
-                get highlightedTranslatedText() {
-                    if (!this.translatedText) return '';
-                    return this.translatedText.split(/\s+/).map(word => `<span>${word}</span>`).join(' ');
                 },
 
                 // --- UI ACTIONS ---
