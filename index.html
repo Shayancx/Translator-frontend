@@ -231,7 +231,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="translation-output-container">
+                        <div class="translation-output-container" style="min-height: 400px;">
                             <div class="translation-output" 
                                  x-html="translatedText ? translatedText.split(/\s+/).map((word, index) => 
                                     `<span class='word-interactive' 
@@ -240,7 +240,7 @@
                                            @click='selectWord(&quot;${word.replace(/'/g, '\\\'')}&quot;)'
                                            :class='{ &quot;word-selected&quot;: ui.selectedWord === &quot;${word.replace(/'/g, '\\\'')}&quot; }'
                                            data-word-index='${index}'>${word}</span>`
-                                 ).join(' ') : ''"
+                                 ).join('\u0020') : ''"
                                  aria-live="polite"
                                  aria-label="Translation output">
                             </div>
@@ -714,5 +714,23 @@
             }));
         });
     </script>
+
+<!-- Additional JavaScript for smooth transitions -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const header = document.querySelector(".header");
+    if (header) {
+        const headerHeight = header.offsetHeight;
+        document.documentElement.style.setProperty("--header-height", `${headerHeight}px`);
+    }
+});
+window.addEventListener("resize", () => {
+    const header = document.querySelector(".header");
+    if (header) {
+        const headerHeight = header.offsetHeight;
+        document.documentElement.style.setProperty("--header-height", `${headerHeight}px`);
+    }
+});
+</script>
 </body>
 </html>
