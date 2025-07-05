@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="style.css">
     <script defer src="alpine.min.js"></script>
 </head>
-<body x-data="{ theme: localStorage.getItem('theme') || 'dark' }" :class="theme" x-init="$watch('theme', val => localStorage.setItem('theme', val))">
+<body x-data="{ theme: localStorage.getItem('theme') || 'dark' }" :class="theme" x-init="$watch('theme', val => localStorage.setItem('theme', val)); $nextTick(() => { updateHeaderHeight() })" @resize.window="updateHeaderHeight()">
     <div class="app" x-data="translator" :class="{ 'loading': ui.isLoading }" role="application" aria-label="LibreTranslate Application">
 
         <!-- Toast Notification Container -->
@@ -150,22 +150,32 @@
                                 aria-label="Source text input"
                             ></textarea>
                             <div class="translation-controls">
-                                <div class="auto-translate-toggle" 
-                                     @click="automaticTranslation = !automaticTranslation"
-                                     :class="{ 'active': automaticTranslation }">
-                                    <div class="toggle-track">
-                                        <span class="toggle-label off">Manual</span>
-                                        <span class="toggle-label on">Auto</span>
-                                        <div class="toggle-thumb"></div>
+                                <div class="translate-button-container" x-data="{ open: false }">
+                                    <button class="btn-translate-main" @click="translate()" :disabled="!sourceText.trim() || ui.isTranslating">
+                                        <span x-show="automaticTranslation">
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="auto-status-icon"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z" opacity=".2"/><path d="M8 0a8 8 0 018 8h-1.5A6.5 6.5 0 008 1.5V0z"><animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="1s" repeatCount="indefinite"/></path></svg>
+                                            <span>Translating...</span>
+                                        </span>
+                                        <span x-show="!automaticTranslation">Translate</span>
+                                    </button>
+                                    <button class="btn-translate-dropdown" @click="open = !open" :aria-expanded="open">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>
+                                    </button>
+                                    <div class="translate-menu" x-show="open" @click.outside="open = false" x-transition>
+                                        <div class="translate-menu-item" @click="automaticTranslation = true; open = false">
+                                            <div class="check-icon">
+                                                <svg x-show="automaticTranslation" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>
+                                            </div>
+                                            <span>Automatic Translation</span>
+                                        </div>
+                                        <div class="translate-menu-item" @click="automaticTranslation = false; open = false">
+                                            <div class="check-icon">
+                                                <svg x-show="!automaticTranslation" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>
+                                            </div>
+                                            <span>Manual Translation</span>
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <button class="btn-translate" 
-                                        @click="translate()" 
-                                        :disabled="!sourceText.trim() || ui.isTranslating"
-                                        x-show="!automaticTranslation">
-                                    <span>Translate</span>
-                                </button>
                                 
                                 <div class="auto-status" x-show="automaticTranslation && sourceText">
                                     <svg class="auto-status-icon" x-show="ui.isTranslating" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -320,417 +330,6 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('translator', () => ({
-                // --- CONFIGURATION ---
-                baseUrl: 'http://192.168.2.77:5000',
-                debounceTimeout: 500,
-                connectionInterval: 15000,
-                toastDuration: 3000,
-
-                // --- STATE ---
-                languages: [],
-                sourceLang: 'auto',
-                targetLang: 'en',
-                detectedLang: '',
-                sourceText: '',
-                translatedText: '',
-                charLimit: -1,
-                isConnected: false,
-                translationTimeout: null,
-
-                automaticTranslation: true,
-
-                // --- UI STATE ---
-                ui: {
-                    isLoading: true,
-                    isTranslating: false,
-                    copied: false,
-                    sourceCopied: false,
-                    error: '',
-                    sourceMenuOpen: false,
-                    targetMenuOpen: false,
-                    translateMenuOpen: false,
-                    showDefinition: false,
-                    selectedWord: '',
-                    wordDefinition: '',
-                    definitionLoading: false,
-                    sourceSearch: '',
-                    targetSearch: '',
-                    wordPreview: {
-                        visible: false,
-                        word: '',
-                        top: 0,
-                        left: 0,
-                        index: -1
-                    }
-                },
-
-                // --- TOASTS ---
-                toasts: [],
-                nextToastId: 0,
-
-                // --- INITIALIZATION ---
-                init() {
-                    this.loadInitialData();
-                    this.setupWatchers();
-                    this.startConnectionMonitor();
-                },
-
-                showWordPreview(event, word, index) {
-                    const rect = event.target.getBoundingClientRect();
-                    this.ui.wordPreview = {
-                        visible: true,
-                        word: word,
-                        top: rect.top - 40,
-                        left: rect.left,
-                        index: index
-                    };
-                },
-
-                hideWordPreview(index) {
-                    if (this.ui.wordPreview.index === index) {
-                        this.ui.wordPreview.visible = false;
-                    }
-                },
-
-                selectWord(word) {
-                    this.ui.selectedWord = word;
-                    this.ui.showDefinition = true;
-                    this.fetchDefinition();
-                },
-
-                async fetchDefinition() {
-                    this.ui.definitionLoading = true;
-                    this.ui.wordDefinition = '';
-                    try {
-                        const response = await fetch(`/search?word=${this.ui.selectedWord}`);
-                        const data = await response.json();
-                        if (data.length > 0) {
-                            this.ui.wordDefinition = this.formatSenses(data[0]);
-                        } else {
-                            this.ui.wordDefinition = null;
-                        }
-                    } catch (error) {
-                        this.ui.wordDefinition = null;
-                    } finally {
-                        this.ui.definitionLoading = false;
-                    }
-                },
-
-                formatSenses(data) {
-                    if (!data || !data.senses) return '';
-
-                    let html = '';
-
-                    data.senses.forEach(sense => {
-                        if (sense.pos) {
-                            html += `<div class="definition-pos-header">${sense.pos}</div>`;
-                        }
-                        if (sense.glosses) {
-                            html += '<div class="definition-gloss">' + sense.glosses.join(', ') + '</div>';
-                        }
-                        if (sense.examples) {
-                            html += '<ul class="definition-examples">';
-                            sense.examples.forEach(example => {
-                                html += `<li>${example.text}</li>`;
-                                if (example.translation) {
-                                    html += `<li class="example-translation">${example.translation}</li>`;
-                                }
-                            });
-                            html += '</ul>';
-                        }
-                    });
-
-                    return html;
-                },
-
-                setupWatchers() {
-                    const savedSourceLang = localStorage.getItem('sourceLang');
-                    if (savedSourceLang) this.sourceLang = JSON.parse(savedSourceLang);
-
-                    const savedTargetLang = localStorage.getItem('targetLang');
-                    if (savedTargetLang) this.targetLang = JSON.parse(savedTargetLang);
-
-                    const savedAutoTranslate = localStorage.getItem('automaticTranslation');
-                    if (savedAutoTranslate) this.automaticTranslation = JSON.parse(savedAutoTranslate);
-
-                    this.$watch('sourceLang', val => localStorage.setItem('sourceLang', JSON.stringify(val)));
-                    this.$watch('targetLang', val => localStorage.setItem('targetLang', JSON.stringify(val)));
-                    this.$watch('automaticTranslation', val => {
-                        localStorage.setItem('automaticTranslation', JSON.stringify(val));
-                        this.addToast(`Automatic translation ${val ? 'enabled' : 'disabled'}.`, 'info');
-                    });
-                    this.$watch('ui.sourceMenuOpen', isOpen => this.handleMenuToggle(isOpen, 'source'));
-                    this.$watch('ui.targetMenuOpen', isOpen => this.handleMenuToggle(isOpen, 'target'));
-                },
-
-                startConnectionMonitor() {
-                    setInterval(() => this.checkConnection(), this.connectionInterval);
-                },
-
-                async loadInitialData() {
-                    this.ui.isLoading = true;
-                    try {
-                        const [languages, settings] = await Promise.all([
-                            this.apiGetLanguages(),
-                            this.apiGetSettings()
-                        ]);
-                        
-                        this.languages = languages;
-                        this.isConnected = true;
-                        
-                        if (this.languages.length > 0 && !this.languages.find(l => l.code === this.targetLang)) {
-                            this.targetLang = this.languages[0].code;
-                        }
-                        
-                        this.charLimit = settings.charLimit || -1;
-                    } catch (err) {
-                        this.ui.error = 'Failed to initialize application. Please check the connection to the server.';
-                        this.isConnected = false;
-                    } finally {
-                        this.ui.isLoading = false;
-                    }
-                },
-
-                // --- API METHODS ---
-                async apiFetch(endpoint, options = {}) {
-                    const url = `${this.baseUrl}${endpoint}`;
-                    try {
-                        const response = await fetch(url, options);
-                        if (!response.ok) {
-                            let errorMsg = `HTTP error! status: ${response.status}`;
-                            try {
-                                const errorData = await response.json();
-                                errorMsg = errorData.error || errorMsg;
-                            } catch (e) { /* Ignore */ }
-                            throw new Error(errorMsg);
-                        }
-                        return response.json();
-                    } catch (err) {
-                        console.error(`API Error (${endpoint}):`, err);
-                        if (err instanceof TypeError && err.message === 'Failed to fetch') {
-                            throw new Error('Network error. Please check your connection.');
-                        }
-                        throw err;
-                    }
-                },
-                apiGetLanguages() { return this.apiFetch('/languages'); },
-                apiGetSettings() { return this.apiFetch('/frontend/settings'); },
-                apiDetectLanguage(text) {
-                    return this.apiFetch('/detect', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: `q=${encodeURIComponent(text)}`
-                    });
-                },
-                apiTranslate(text, source, target) {
-                    const formData = new URLSearchParams();
-                    formData.append('q', text);
-                    formData.append('source', source);
-                    formData.append('target', target);
-                    formData.append('format', 'text');
-                    return this.apiFetch('/translate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: formData.toString()
-                    });
-                },
-
-                // --- TOAST METHODS ---
-                addToast(message, type = 'info', duration = this.toastDuration) {
-                    const id = this.nextToastId++;
-                    const toast = { id, message, type, visible: true };
-                    this.toasts.push(toast);
-                    setTimeout(() => this.removeToast(id), duration);
-                },
-                removeToast(id) {
-                    const toast = this.toasts.find(t => t.id === id);
-                    if (toast) {
-                        toast.visible = false;
-                        setTimeout(() => {
-                            this.toasts = this.toasts.filter(t => t.id !== id);
-                        }, 500);
-                    }
-                },
-
-                // --- LANGUAGE METHODS ---
-                getLanguageName(code) {
-                    if (code === 'auto') return 'Auto-detect';
-                    const lang = this.languages.find(l => l.code === code);
-                    return lang ? lang.name : code;
-                },
-                filterLanguages(languages, searchTerm) {
-                    if (!searchTerm) return languages;
-                    const term = searchTerm.toLowerCase();
-                    return languages.filter(lang => lang.name.toLowerCase().includes(term));
-                },
-                getTargetLanguages(sourceLang) {
-                    if (sourceLang === 'auto') return this.languages;
-                    const source = this.languages.find(l => l.code === sourceLang);
-                    if (!source) return this.languages;
-                    return this.languages.filter(l => source.targets.includes(l.code));
-                },
-                isValidTarget(sourceLang, targetLang) {
-                    const source = this.languages.find(l => l.code === sourceLang);
-                    return source && source.targets.includes(targetLang);
-                },
-
-                // --- COMPUTED PROPERTIES ---
-                get filteredSourceLanguages() {
-                    return this.filterLanguages(this.languages, this.ui.sourceSearch);
-                },
-                get targetLanguages() {
-                    return this.getTargetLanguages(this.sourceLang);
-                },
-                get filteredTargetLanguages() {
-                    return this.filterLanguages(this.targetLanguages, this.ui.targetSearch);
-                },
-
-                // --- UI ACTIONS ---
-                selectSourceLang(code) {
-                    if (code === this.targetLang) this.swapLanguages();
-                    else this.sourceLang = code;
-                    this.ui.sourceMenuOpen = false;
-                    if (this.sourceText) this.translate();
-                },
-                selectTargetLang(code) {
-                    if (code === this.sourceLang) this.swapLanguages();
-                    else this.targetLang = code;
-                    this.ui.targetMenuOpen = false;
-                    if (this.sourceText) this.translate();
-                },
-                handleMenuToggle(isOpen, type) {
-                    if (isOpen) {
-                        this.$nextTick(() => this.$refs[`${type}SearchInput`]?.focus());
-                    } else {
-                        this.ui[`${type}Search`] = '';
-                    }
-                },
-                swapLanguages() {
-                    if (this.sourceLang === 'auto') return;
-                    if (!this.isValidTarget(this.targetLang, this.sourceLang)) {
-                        this.ui.error = `Cannot swap: ${this.getLanguageName(this.targetLang)} does not support translating to ${this.getLanguageName(this.sourceLang)}`;
-                        return;
-                    }
-                    [this.sourceLang, this.targetLang] = [this.targetLang, this.sourceLang];
-                    [this.sourceText, this.translatedText] = [this.translatedText, this.sourceText];
-                },
-                async pasteFromClipboard() {
-                    try {
-                        const text = await navigator.clipboard.readText();
-                        this.sourceText = text;
-                        this.handleInput();
-                    } catch (err) {
-                        this.ui.error = 'Unable to access clipboard. Please grant permission in your browser.';
-                    }
-                },
-                async copyTranslation() {
-                    if (!this.translatedText) return;
-                    try {
-                        await navigator.clipboard.writeText(this.translatedText);
-                        this.ui.copied = true;
-                        setTimeout(() => this.ui.copied = false, 2000);
-                    } catch (err) {
-                        this.addToast('Failed to copy to clipboard.', 'error');
-                    }
-                },
-
-                async copySourceText() {
-                    if (!this.sourceText) return;
-                    try {
-                        await navigator.clipboard.writeText(this.sourceText);
-                        this.ui.sourceCopied = true;
-                        setTimeout(() => this.ui.sourceCopied = false, 2000);
-                    } catch (err) {
-                        this.addToast('Failed to copy to clipboard.', 'error');
-                    }
-                },
-
-                // --- TRANSLATION LOGIC ---
-                handleInput() {
-                    this.ui.error = '';
-                    this.detectedLang = '';
-                    if (this.translationTimeout) clearTimeout(this.translationTimeout);
-
-                    if (this.sourceText.trim()) {
-                        if (this.automaticTranslation) {
-                            this.ui.isTranslating = true;
-                            this.translationTimeout = setTimeout(() => this.translate(), this.debounceTimeout);
-                        }
-                    } else {
-                        this.translatedText = '';
-                        this.ui.isTranslating = false;
-                    }
-                },
-                _validateTargetLanguage(sourceLang) {
-                    const sourceLangObj = this.languages.find(l => l.code === sourceLang);
-                    if (sourceLangObj && !sourceLangObj.targets.includes(this.targetLang)) {
-                        const newTarget = sourceLangObj.targets.includes('en') ? 'en' : (sourceLangObj.targets[0] || 'en');
-                        this.targetLang = newTarget;
-                    }
-                },
-                async translate() {
-                    if (!this.sourceText.trim()) return;
-                    
-                    this.ui.isTranslating = true;
-                    this.ui.error = '';
-                    this.detectedLang = '';
-                    
-                    try {
-                        let source = this.sourceLang;
-                        if (source === 'auto') {
-                            const detections = await this.apiDetectLanguage(this.sourceText);
-                            if (detections.length > 0 && detections[0].confidence > 0.5) {
-                                source = detections[0].language;
-                                this.detectedLang = source;
-                                this._validateTargetLanguage(source);
-                            } else {
-                                source = 'en'; // Fallback
-                            }
-                        }
-
-                        const result = await this.apiTranslate(this.sourceText, source, this.targetLang);
-                        this.translatedText = result.translatedText;
-                    } catch (err) {
-                        this.ui.error = err.message || 'An unknown translation error occurred.';
-                        this.translatedText = '';
-                    }
-                    finally {
-                        this.ui.isTranslating = false;
-                    }
-                },
-
-                // --- HEALTH CHECK ---
-                async checkConnection() {
-                    try {
-                        await this.apiGetLanguages();
-                        this.isConnected = true;
-                    } catch (err) {
-                        this.isConnected = false;
-                    }
-                }
-            }));
-        });
-    </script>
-
-<!-- Additional JavaScript for smooth transitions -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const header = document.querySelector(".header");
-    if (header) {
-        const headerHeight = header.offsetHeight;
-        document.documentElement.style.setProperty("--header-height", `${headerHeight}px`);
-    }
-});
-window.addEventListener("resize", () => {
-    const header = document.querySelector(".header");
-    if (header) {
-        const headerHeight = header.offsetHeight;
-        document.documentElement.style.setProperty("--header-height", `${headerHeight}px`);
-    }
-});
-</script>
+    <script defer src="app.js"></script>
 </body>
 </html>
