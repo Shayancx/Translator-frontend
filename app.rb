@@ -1,93 +1,75 @@
 require 'roda'
-require 'elasticsearch'
-require 'oj'
+require 'net/http'
+require 'uri'
 
 class App < Roda
   plugin :public, root: '.'
-
   plugin :json
+  plugin :halt
+  plugin :request_headers
 
-  es_client = Elasticsearch::Client.new(
-    host: 'https://localhost:9200',
-    transport_options: {
-      ssl: {
-        ca_file: '/home/shayan/Dokumente/elasticsearch-9.0.3/config/certs/http_ca.crt'
-      }
-    },
-    user: 'elastic',
-    password: '2u3DuVRvH4ZwIlA_u1dy',
-    log: true
-  )
+  LIBRETRANSLATE_URL = 'http://192.168.2.77:5000'
 
   route do |r|
-    r.public # Serve static files from the public directory (which is the root in this case)
+    r.public
 
     r.root do
       response['Content-Type'] = 'text/html'
       File.read('index.html')
     end
 
+    # Test page
+    r.get 'test' do
+      response['Content-Type'] = 'text/html'
+      File.read('test-api.html')
+    end
+
+    # Proxy all LibreTranslate endpoints
+    r.on 'languages' do
+      r.get do
+        uri = URI("#{LIBRETRANSLATE_URL}/languages")
+        response = Net::HTTP.get_response(uri)
+        response.body
+      end
+    end
+
+    r.on 'frontend' do
+      r.on 'settings' do
+        r.get do
+          uri = URI("#{LIBRETRANSLATE_URL}/frontend/settings")
+          response = Net::HTTP.get_response(uri)
+          response.body
+        end
+      end
+    end
+
+    r.on 'detect' do
+      r.post do
+        uri = URI("#{LIBRETRANSLATE_URL}/detect")
+        http = Net::HTTP.new(uri.host, uri.port)
+        request = Net::HTTP::Post.new(uri)
+        request.set_form_data(r.params)
+        response = http.request(request)
+        response.body
+      end
+    end
+
+    r.on 'translate' do
+      r.post do
+        uri = URI("#{LIBRETRANSLATE_URL}/translate")
+        http = Net::HTTP.new(uri.host, uri.port)
+        request = Net::HTTP::Post.new(uri)
+        request.set_form_data(r.params)
+        response = http.request(request)
+        response.body
+      end
+    end
+
+    # Keep the search endpoint
     r.on 'search' do
       r.get do
-        word = r.params['word'].to_s.strip.downcase
-        
-        response = es_client.search(
-          index: 'wiktionary',
-          body: {
-            query: {
-              bool: {
-                should: [
-                  # Exact match gets highest priority
-                  {
-                    term: {
-                      "word.keyword" => {
-                        value: word,
-                        boost: 100
-                      }
-                    }
-                  },
-                  # Case-insensitive exact match
-                  {
-                    match_phrase: {
-                      word: {
-                        query: word,
-                        boost: 50
-                      }
-                    }
-                  },
-                  # Fuzzy match for typos (lowest priority)
-                  {
-                    match: {
-                      word: {
-                        query: word,
-                        fuzziness: "AUTO",
-                        prefix_length: 2,
-                        boost: 1
-                      }
-                    }
-                  }
-                ],
-                minimum_should_match: 1
-              }
-            },
-            size: 10
-          }
-        )
-        
-        # Filter to return only the highest scoring result
-        hits = response['hits']['hits']
-        if hits.any?
-          # Find exact match first
-          exact = hits.find { |h| h['_source']['word'].downcase == word }
-          if exact
-            [exact['_source']]
-          else
-            # Return highest scoring result
-            [hits.first['_source']]
-          end
-        else
-          []
-        end
+        # Return empty array for now to avoid Elasticsearch errors
+        []
       end
     end
   end

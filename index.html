@@ -208,7 +208,7 @@
                                         <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/>
                                     </svg>
                                 </button>
-                                <div class="select-menu" x-show="ui.targetMenuOpen" @click.outside="ui.targetMenuOpen = false" x-transition role="menu" aria-label="Target language menu">
+                                <div class="select-menu" x-show="ui.targetMenuOpen" @click.outside="ui.targetMenuOpen = false" role="menu" aria-label="Target language menu">
                                     <div class="select-menu-search">
                                         <input type="text" x-model.debounce.300ms="ui.targetSearch" placeholder="Search language..." @keydown.escape.window="ui.targetMenuOpen = false" x-ref="targetSearchInput" aria-label="Search target languages">
                                     </div>

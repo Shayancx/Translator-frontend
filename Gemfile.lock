@@ -1,46 +1,24 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    bigdecimal (3.2.2)
-    elastic-transport (8.4.0)
-      faraday (< 3)
-      multi_json
-    elasticsearch (9.0.3)
-      elastic-transport (~> 8.3)
-      elasticsearch-api (= 9.0.3)
-    elasticsearch-api (9.0.3)
-      multi_json
-    faraday (2.13.1)
-      faraday-net_http (>= 2.0, < 3.5)
-      json
-      logger
-    faraday-net_http (3.4.1)
-      net-http (>= 0.5.0)
-    json (2.12.2)
     logger (1.7.0)
-    multi_json (1.15.0)
-    net-http (0.6.0)
-      uri
     nio4r (2.7.4)
-    oj (3.16.11)
-      bigdecimal (>= 3.0)
-      ostruct (>= 0.2)
-    ostruct (0.6.2)
     puma (6.6.0)
       nio4r (~> 2.0)
     rack (3.1.16)
+    rack-cors (3.0.0)
+      logger
+      rack (>= 3.0.14)
     roda (3.93.0)
       rack
-    uri (1.0.3)
 
 PLATFORMS
   ruby
   x86_64-linux
 
 DEPENDENCIES
-  elasticsearch
-  oj
   puma
+  rack-cors
   roda
 
 BUNDLED WITH

@@ -1,7 +1,7 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('translator', () => ({
         // --- CONFIGURATION ---
-        baseUrl: 'http://192.168.2.77:5000',
+        baseUrl: '',
         debounceTimeout: 500,
         connectionInterval: 15000,
         toastDuration: 3000,
